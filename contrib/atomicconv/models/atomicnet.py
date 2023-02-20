@@ -204,14 +204,12 @@ class TensorflowFragmentRegressor(TensorflowMultiTaskRegressor):
     N_2 = self.frag2_num_atoms
     M = self.max_num_neighbors
 
-    orig_dict = {}
     batch_size = F_b.shape[0]
     num_features = F_b[0][0].shape[1]
     frag1_X_b = np.zeros((batch_size, N_1, num_features))
     for i in range(batch_size):
       frag1_X_b[i] = F_b[i][0]
-    orig_dict["frag1_X_placeholder"] = frag1_X_b
-
+    orig_dict = {"frag1_X_placeholder": frag1_X_b}
     frag2_X_b = np.zeros((batch_size, N_2, num_features))
     for i in range(batch_size):
       frag2_X_b[i] = F_b[i][3]

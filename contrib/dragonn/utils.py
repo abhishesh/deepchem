@@ -41,19 +41,18 @@ def get_motif_scores(encoded_sequences,
     scores[:, j, :] = get_pssm_scores(encoded_sequences,
                                       log_pwm) - get_pssm_scores(
                                           encoded_sequences, gc_log_pwm)
-  if max_scores is not None:
-    sorted_scores = np.sort(scores)[:, :, ::-1][:, :, :max_scores]
-    if return_positions:
-      sorted_positions = scores.argsort()[:, :, ::-1][:, :, :max_scores]
-      return np.concatenate(
-          (sorted_scores.reshape((num_samples, len(motif_names) * max_scores)),
-           sorted_positions.reshape(
-               (num_samples, len(motif_names) * max_scores))),
-          axis=1)
-    else:
-      return sorted_scores.reshape((num_samples, len(motif_names) * max_scores))
-  else:
+  if max_scores is None:
     return scores
+  sorted_scores = np.sort(scores)[:, :, ::-1][:, :, :max_scores]
+  if return_positions:
+    sorted_positions = scores.argsort()[:, :, ::-1][:, :, :max_scores]
+    return np.concatenate(
+        (sorted_scores.reshape((num_samples, len(motif_names) * max_scores)),
+         sorted_positions.reshape(
+             (num_samples, len(motif_names) * max_scores))),
+        axis=1)
+  else:
+    return sorted_scores.reshape((num_samples, len(motif_names) * max_scores))
 
 
 def get_pssm_scores(encoded_sequences, pssm):
@@ -89,9 +88,7 @@ def get_pssm_scores(encoded_sequences, pssm):
   # sum over the bases
   fwd_scores = fwd_scores.sum(axis=1)
   rc_scores = rc_scores.sum(axis=1)
-  # take max of fwd and reverse scores at each position
-  scores = np.maximum(fwd_scores, rc_scores)
-  return scores
+  return np.maximum(fwd_scores, rc_scores)
 
 
 def one_hot_encode(sequences):
@@ -124,7 +121,7 @@ def get_sequence_strings(encoded_sequences):
     letter_indxs = (encoded_sequences[:, :, i, :] == 1).squeeze()
     sequence_characters[letter_indxs] = letter
   # return 1D view of sequence characters
-  return sequence_characters.view('S%s' % (seq_length)).ravel()
+  return sequence_characters.view(f'S{seq_length}').ravel()
 
 
 def encode_fasta_sequences(fname):

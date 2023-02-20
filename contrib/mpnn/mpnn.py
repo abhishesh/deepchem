@@ -124,13 +124,13 @@ for i in xrange(0, MAXITER):
   optimizer.zero_grad()
   train_loss = Variable(torch.zeros(1, 1))
   y_hats_train = []
-  for j in xrange(0, BATCH_SIZE):
+  for _ in xrange(0, BATCH_SIZE):
     sample_index = random.randint(0, len(train_smiles) - 2)
     smile = train_smiles[sample_index]
     g, h = construct_multigraph(smile) # TODO: cache this
 
     g2, h2 = construct_multigraph(smile)
-    
+
     for k in xrange(0, T):
       message_pass(g, h, k)
 
@@ -171,10 +171,10 @@ for i in xrange(0, MAXITER):
     y_val = np.array(map(lambda x: x.data.numpy(), val_labels))
     y_hats_val = y_hats_val.reshape(-1, 1)
     y_val = y_val.reshape(-1, 1)
-    
+
     r2_val_old = r2_score(y_val, y_hats_val)
     r2_val_new = pearsonr(y_val, y_hats_val)[0]**2
-  
+
     train_loss_ = train_loss.data.numpy()[0]
     val_loss_ = val_loss.data.numpy()[0]
     print 'epoch [%i/%i] train_loss [%f] val_loss [%f] r2_val_old [%.4f], r2_val_new [%.4f]' \

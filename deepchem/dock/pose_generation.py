@@ -114,18 +114,17 @@ class GninaPoseGenerator(PoseGenerator):
         """Initialize GNINA pose generator."""
 
         data_dir = get_data_dir()
-        if platform.system() == 'Linux':
-            url = "https://github.com/gnina/gnina/releases/download/v1.0/gnina"
-            filename = 'gnina'
-            self.gnina_dir = data_dir
-            self.gnina_cmd = os.path.join(self.gnina_dir, filename)
-        else:
+        if platform.system() != 'Linux':
             raise ValueError(
                 "GNINA currently only runs on Linux. Try using a cloud platform to run this code instead."
             )
 
+        filename = 'gnina'
+        self.gnina_dir = data_dir
+        self.gnina_cmd = os.path.join(self.gnina_dir, filename)
         if not os.path.exists(self.gnina_cmd):
             logger.info("GNINA not available. Downloading...")
+            url = "https://github.com/gnina/gnina/releases/download/v1.0/gnina"
             download_url(url, data_dir)
             downloaded_file = os.path.join(data_dir, filename)
             os.chmod(downloaded_file, 755)
@@ -206,8 +205,8 @@ class GninaPoseGenerator(PoseGenerator):
         ligand_name = os.path.basename(ligand_file).split(".")[0]
 
         # Define locations of log and output files
-        log_file = os.path.join(out_dir, "%s_log.txt" % ligand_name)
-        out_file = os.path.join(out_dir, "%s_docked.pdbqt" % ligand_name)
+        log_file = os.path.join(out_dir, f"{ligand_name}_log.txt")
+        out_file = os.path.join(out_dir, f"{ligand_name}_docked.pdbqt")
         logger.info("About to call GNINA.")
 
         # Write GNINA conf file
@@ -232,10 +231,7 @@ class GninaPoseGenerator(PoseGenerator):
         docked_complexes = [(protein_mol[1], ligand) for ligand in ligands]
         scores = read_gnina_log(log_file)
 
-        if generate_scores:
-            return docked_complexes, scores
-        else:
-            return docked_complexes
+        return (docked_complexes, scores) if generate_scores else docked_complexes
 
 
 class VinaPoseGenerator(PoseGenerator):
@@ -332,23 +328,10 @@ class VinaPoseGenerator(PoseGenerator):
         ------
         `ValueError` if `num_pockets` is set but `self.pocket_finder is None`.
         """
-        if "cpu" in kwargs:
-            cpu = kwargs["cpu"]
-        else:
-            cpu = 0
-        if "min_rmsd" in kwargs:
-            min_rmsd = kwargs["min_rmsd"]
-        else:
-            min_rmsd = 1.0
-        if "max_evals" in kwargs:
-            max_evals = kwargs["max_evals"]
-        else:
-            max_evals = 0
-        if "energy_range" in kwargs:
-            energy_range = kwargs["energy_range"]
-        else:
-            energy_range = 3.0
-
+        cpu = kwargs.get("cpu", 0)
+        min_rmsd = kwargs.get("min_rmsd", 1.0)
+        max_evals = kwargs.get("max_evals", 0)
+        energy_range = kwargs.get("energy_range", 3.0)
         try:
             from vina import Vina
         except ModuleNotFoundError:
@@ -372,8 +355,8 @@ class VinaPoseGenerator(PoseGenerator):
 
         # Prepare protein
         protein_name = os.path.basename(protein_file).split(".")[0]
-        protein_hyd = os.path.join(out_dir, "%s_hyd.pdb" % protein_name)
-        protein_pdbqt = os.path.join(out_dir, "%s.pdbqt" % protein_name)
+        protein_hyd = os.path.join(out_dir, f"{protein_name}_hyd.pdb")
+        protein_pdbqt = os.path.join(out_dir, f"{protein_name}.pdbqt")
         protein_mol = load_molecule(protein_file,
                                     calc_charges=True,
                                     add_hydrogens=True)
@@ -384,28 +367,26 @@ class VinaPoseGenerator(PoseGenerator):
         if centroid is not None and box_dims is not None:
             centroids = [centroid]
             dimensions = [box_dims]
+        elif self.pocket_finder is None:
+            logger.info(
+                "Pockets not specified. Will use whole protein to dock")
+            centroids = [compute_centroid(protein_mol[0])]
+            dimensions = [compute_protein_range(protein_mol[0]) + 5.0]
         else:
-            if self.pocket_finder is None:
-                logger.info(
-                    "Pockets not specified. Will use whole protein to dock")
-                centroids = [compute_centroid(protein_mol[0])]
-                dimensions = [compute_protein_range(protein_mol[0]) + 5.0]
-            else:
-                logger.info("About to find putative binding pockets")
-                pockets = self.pocket_finder.find_pockets(protein_file)
-                logger.info("%d pockets found in total" % len(pockets))
-                logger.info("Computing centroid and size of proposed pockets.")
-                centroids, dimensions = [], []
-                for pocket in pockets:
-                    (x_min, x_max), (y_min, y_max), (
-                        z_min,
-                        z_max) = pocket.x_range, pocket.y_range, pocket.z_range
-                    # TODO(rbharath: Does vina divide box dimensions by 2?
-                    x_box = (x_max - x_min) / 2.
-                    y_box = (y_max - y_min) / 2.
-                    z_box = (z_max - z_min) / 2.
-                    centroids.append(pocket.center())
-                    dimensions.append(np.array((x_box, y_box, z_box)))
+            logger.info("About to find putative binding pockets")
+            pockets = self.pocket_finder.find_pockets(protein_file)
+            logger.info("%d pockets found in total" % len(pockets))
+            logger.info("Computing centroid and size of proposed pockets.")
+            centroids, dimensions = [], []
+            for pocket in pockets:
+                (x_min, x_max), (y_min, y_max), (
+                    z_min,
+                    z_max) = pocket.x_range, pocket.y_range, pocket.z_range
+                centroids.append(pocket.center())
+                x_box = (x_max - x_min) / 2.
+                y_box = (y_max - y_min) / 2.
+                z_box = (z_max - z_min) / 2.
+                dimensions.append(np.array((x_box, y_box, z_box)))
 
         if num_pockets is not None:
             logger.info(
@@ -416,7 +397,7 @@ class VinaPoseGenerator(PoseGenerator):
 
         # Prepare ligand
         ligand_name = os.path.basename(ligand_file).split(".")[0]
-        ligand_pdbqt = os.path.join(out_dir, "%s.pdbqt" % ligand_name)
+        ligand_pdbqt = os.path.join(out_dir, f"{ligand_name}.pdbqt")
 
         ligand_mol = load_molecule(ligand_file,
                                    calc_charges=True,
@@ -433,8 +414,8 @@ class VinaPoseGenerator(PoseGenerator):
         for i, (protein_centroid,
                 box_dims) in enumerate(zip(centroids, dimensions)):
             logger.info("Docking in pocket %d/%d" % (i + 1, len(centroids)))
-            logger.info("Docking with center: %s" % str(protein_centroid))
-            logger.info("Box dimensions: %s" % str(box_dims))
+            logger.info(f"Docking with center: {str(protein_centroid)}")
+            logger.info(f"Box dimensions: {str(box_dims)}")
             # Write Vina conf file
             conf_file = os.path.join(out_dir, "conf.txt")
             write_vina_conf(protein_pdbqt,
@@ -446,7 +427,7 @@ class VinaPoseGenerator(PoseGenerator):
                             exhaustiveness=exhaustiveness)
 
             # Define locations of output files
-            out_pdbqt = os.path.join(out_dir, "%s_docked.pdbqt" % ligand_name)
+            out_pdbqt = os.path.join(out_dir, f"{ligand_name}_docked.pdbqt")
             logger.info("About to call Vina")
 
             vpg.set_receptor(protein_pdbqt)
@@ -466,7 +447,4 @@ class VinaPoseGenerator(PoseGenerator):
             docked_complexes += [(protein_mol[1], ligand) for ligand in ligands]
             all_scores += scores
 
-        if generate_scores:
-            return docked_complexes, all_scores
-        else:
-            return docked_complexes
+        return (docked_complexes, all_scores) if generate_scores else docked_complexes

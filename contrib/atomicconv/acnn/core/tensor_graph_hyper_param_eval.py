@@ -30,34 +30,68 @@ splits = ["random", "scaffold", "stratified", "temporal"]
 
 
 def params():
-  d2 = {
+  yield {
       "name":
       "hyper5",
-      "radial": [[
-          1.5, 2.5, 3.5, 4.5, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0,
-          10.5
-      ], [0.0, 2.0, 4.0], [0.05]],
+      "radial": [
+          [
+              1.5,
+              2.5,
+              3.5,
+              4.5,
+              5.5,
+              6.0,
+              6.5,
+              7.0,
+              7.5,
+              8.0,
+              8.5,
+              9.0,
+              9.5,
+              10.0,
+              10.5,
+          ],
+          [0.0, 2.0, 4.0],
+          [0.05],
+      ],
       "layer_sizes": [32, 16, 8],
       "learning_rate":
       0.001,
       "epochs":
       10,
   }
-  yield d2
-  d2 = {
+  yield {
       "name":
       "hyper6",
-      "radial": [[
-          1.5, 2.0, 2.5, 3.5, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0,
-          9.5, 10.0, 10.5
-      ], [0.0, 2.0, 4.0], [0.1]],
+      "radial": [
+          [
+              1.5,
+              2.0,
+              2.5,
+              3.5,
+              4.5,
+              5.0,
+              5.5,
+              6.0,
+              6.5,
+              7.0,
+              7.5,
+              8.0,
+              8.5,
+              9.0,
+              9.5,
+              10.0,
+              10.5,
+          ],
+          [0.0, 2.0, 4.0],
+          [0.1],
+      ],
       "layer_sizes": [32, 32, 16],
       "learning_rate":
       0.001,
       "epochs":
       10,
   }
-  yield d2
 
 
 metric = [
@@ -66,8 +100,8 @@ metric = [
 ]
 for split in splits:
   data_dir = os.path.join(base_dir, "datasets")
-  train_dir = os.path.join(data_dir, "%s_train" % split)
-  test_dir = os.path.join(data_dir, "%s_test" % split)
+  train_dir = os.path.join(data_dir, f"{split}_train")
+  test_dir = os.path.join(data_dir, f"{split}_test")
 
   train_dataset = dc.data.DiskDataset(train_dir)
   test_dataset = dc.data.DiskDataset(test_dir)

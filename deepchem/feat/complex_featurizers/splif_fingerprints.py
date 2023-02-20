@@ -51,17 +51,16 @@ def compute_splif_features_in_range(frag1: Tuple,
     """
     contacts = np.nonzero((pairwise_distances > contact_bin[0]) &
                           (pairwise_distances < contact_bin[1]))
-    frag1_atoms = set([int(c) for c in contacts[0].tolist()])
+    frag1_atoms = {int(c) for c in contacts[0].tolist()}
 
     frag1_ecfp_dict = compute_all_ecfp(frag1[1],
                                        indices=frag1_atoms,
                                        degree=ecfp_degree)
     frag2_ecfp_dict = compute_all_ecfp(frag2[1], degree=ecfp_degree)
-    splif_dict = {
+    return {
         contact: (frag1_ecfp_dict[contact[0]], frag2_ecfp_dict[contact[1]])
         for contact in zip(contacts[0], contacts[1])
     }
-    return splif_dict
 
 
 def featurize_splif(frag1, frag2, contact_bins, pairwise_distances,
@@ -91,13 +90,12 @@ def featurize_splif(frag1, frag2, contact_bins, pairwise_distances,
     Dictionaries of SPLIF interactions suitable for `vectorize` or
     `voxelize`.
     """
-    splif_dicts = []
-    for i, contact_bin in enumerate(contact_bins):
-        splif_dicts.append(
-            compute_splif_features_in_range(frag1, frag2, pairwise_distances,
-                                            contact_bin, ecfp_degree))
-
-    return splif_dicts
+    return [
+        compute_splif_features_in_range(
+            frag1, frag2, pairwise_distances, contact_bin, ecfp_degree
+        )
+        for contact_bin in contact_bins
+    ]
 
 
 class SplifFingerprint(ComplexFeaturizer):

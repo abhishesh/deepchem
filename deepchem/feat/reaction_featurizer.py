@@ -7,7 +7,6 @@ try:
 except ModuleNotFoundError:
     raise ImportError(
         'Transformers must be installed for RxnFeaturizer to be used!')
-    pass
 
 
 class RxnFeaturizer(Featurizer):
@@ -79,12 +78,9 @@ class RxnFeaturizer(Featurizer):
         product = list(map(lambda x: x.split('>')[2], datapoint_list))
 
         if self.sep_reagent:
-            source = [x + '>' + y for x, y in zip(reactant, reagent)]
+            source = [f'{x}>{y}' for x, y in zip(reactant, reagent)]
         else:
-            source = [
-                x + '.' + y + '>' if y else x + '>' + y
-                for x, y in zip(reactant, reagent)
-            ]
+            source = [f'{x}.{y}>' if y else f'{x}>{y}' for x, y in zip(reactant, reagent)]
         target = product
 
         source_encoding = list(
@@ -104,4 +100,4 @@ class RxnFeaturizer(Featurizer):
         while saving the dataset, due to the large default name of the HuggingFace
         tokenizer.
         """
-        return 'RxnFeaturizer_' + str(self.sep_reagent)
+        return f'RxnFeaturizer_{str(self.sep_reagent)}'

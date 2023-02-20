@@ -69,7 +69,7 @@ class AtomicConformation:
         """
         indices = np.where(self.property_names == name)[0]
         if len(indices) == 0:
-            raise ValueError("No property called '%s'" % name)
+            raise ValueError(f"No property called '{name}'")
         return self.properties[:, indices[0]]
 
     @property
@@ -163,7 +163,7 @@ class AtomicConformationFeaturizer(Featurizer):
             mols = [Chem.MolFromPDBFile(datapoint, removeHs=False)]
         elif datapoint.endswith('.sdf'):
             supplier = Chem.SDMolSupplier(datapoint, removeHs=False)
-            mols = [mol for mol in supplier]
+            mols = list(supplier)
         elif datapoint.endswith('.mol2'):
             mols = [Chem.MolFromMol2File(datapoint, removeHs=False)]
         else:

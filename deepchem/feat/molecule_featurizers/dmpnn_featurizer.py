@@ -228,13 +228,11 @@ def bond_features(bond: RDKitBond) -> Sequence[Union[bool, int, float]]:
     14
 
     """
-    if bond is None:
-        b_features: Sequence[Union[
-            bool, int, float]] = [1] + [0] * (GraphConvConstants.BOND_FDIM - 1)
-
-    else:
-        b_features = [0] + b_Feats(bond, use_extended_chirality=True)
-    return b_features
+    return (
+        [1] + [0] * (GraphConvConstants.BOND_FDIM - 1)
+        if bond is None
+        else [0] + b_Feats(bond, use_extended_chirality=True)
+    )
 
 
 def map_reac_to_prod(
@@ -260,8 +258,7 @@ def map_reac_to_prod(
     """
     only_prod_ids: List[int] = []
     prod_map_to_id: Dict[int, int] = {}
-    mapnos_reac: Set[int] = set(
-        [atom.GetAtomMapNum() for atom in mol_reac.GetAtoms()])
+    mapnos_reac: Set[int] = {atom.GetAtomMapNum() for atom in mol_reac.GetAtoms()}
     for atom in mol_prod.GetAtoms():
         mapno = atom.GetAtomMapNum()
         if (mapno > 0):
@@ -508,13 +505,12 @@ class DMPNNFeaturizer(MolecularFeaturizer):
             - global_features: Array of global molecular features
 
         """
-        if isinstance(datapoint, Chem.rdchem.Mol):
-            if self.is_adding_hs:
-                datapoint = Chem.AddHs(datapoint)
-        else:
+        if not isinstance(datapoint, Chem.rdchem.Mol):
             raise ValueError(
                 "Feature field should contain smiles for DMPNN featurizer!")
 
+        if self.is_adding_hs:
+            datapoint = Chem.AddHs(datapoint)
         # get atom features
         f_atoms: np.ndarray = np.asarray(
             [atom_features(atom) for atom in datapoint.GetAtoms()], dtype=float)

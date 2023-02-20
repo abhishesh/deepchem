@@ -30,13 +30,30 @@ splits = ["random", "stratified", "index", "scaffold"]
 
 
 def params():
-  d2 = {
+  yield {
       "name":
       "hyper5",
-      "radial": [[
-          1.5, 2.5, 3.5, 4.5, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0,
-          10.5
-      ], [0.0, 2.0, 4.0], [0.05]],
+      "radial": [
+          [
+              1.5,
+              2.5,
+              3.5,
+              4.5,
+              5.5,
+              6.0,
+              6.5,
+              7.0,
+              7.5,
+              8.0,
+              8.5,
+              9.0,
+              9.5,
+              10.0,
+              10.5,
+          ],
+          [0.0, 2.0, 4.0],
+          [0.05],
+      ],
       "layer_sizes": [32, 16, 8],
       "learning_rate":
       0.001,
@@ -49,14 +66,37 @@ def params():
       "complex_num_atoms":
       982,
   }
-  yield d2
-  d2 = {
+  yield {
       "name":
       "original",
-      "radial": [[
-          1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0,
-          8.5, 9.0, 9.5, 10.0, 10.5, 11.0, 11.5, 12.0
-      ], [0.0, 4.0, 8.0], [0.4]],
+      "radial": [
+          [
+              1.5,
+              2.0,
+              2.5,
+              3.0,
+              3.5,
+              4.0,
+              4.5,
+              5.0,
+              5.5,
+              6.0,
+              6.5,
+              7.0,
+              7.5,
+              8.0,
+              8.5,
+              9.0,
+              9.5,
+              10.0,
+              10.5,
+              11.0,
+              11.5,
+              12.0,
+          ],
+          [0.0, 4.0, 8.0],
+          [0.4],
+      ],
       "layer_sizes": [32, 32, 16],
       "learning_rate":
       0.001,
@@ -69,7 +109,6 @@ def params():
       "complex_num_atoms":
       982,
   }
-  yield d2
 
 
 metric = [
@@ -78,9 +117,9 @@ metric = [
 ]
 for split in splits:
   data_dir = os.path.join(base_dir, "datasets")
-  train_dir = os.path.join(data_dir, "%s_train" % split)
-  valid_dir = os.path.join(data_dir, "%s_valid" % split)
-  test_dir = os.path.join(data_dir, "%s_test" % split)
+  train_dir = os.path.join(data_dir, f"{split}_train")
+  valid_dir = os.path.join(data_dir, f"{split}_valid")
+  test_dir = os.path.join(data_dir, f"{split}_test")
 
   train_dataset = dc.data.DiskDataset(train_dir)
   valid_dataset = dc.data.DiskDataset(train_dir)
@@ -120,7 +159,7 @@ for split in splits:
           tg,
           feed_dict_generator(valid_dataset, batch_size), transformers, [label])
       valid_scores = valid_evaluator.compute_model_performance(metric)
-      valid_scores = {"%s_valid" % k: v for k, v in valid_scores.items()}
+      valid_scores = {f"{k}_valid": v for k, v in valid_scores.items()}
       param.update(valid_scores)
       # test_evaluator = dc.utils.evaluate.GeneratorEvaluator(
       #   tg, feed_dict_generator(test_dataset, batch_size), transformers, [label])

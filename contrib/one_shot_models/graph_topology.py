@@ -62,20 +62,22 @@ class GraphTopology(object):
     self.atom_features_placeholder = tensor = tf.placeholder(
         dtype='float32',
         shape=(None, self.n_feat),
-        name=self.name + '_atom_features')
+        name=f'{self.name}_atom_features',
+    )
     self.deg_adj_lists_placeholders = [
         tf.placeholder(
             dtype='int32',
             shape=(None, deg),
-            name=self.name + '_deg_adj' + str(deg))
-        for deg in range(1, self.max_deg + 1)
+            name=f'{self.name}_deg_adj{str(deg)}',
+        ) for deg in range(1, self.max_deg + 1)
     ]
     self.deg_slice_placeholder = tf.placeholder(
         dtype='int32',
         shape=(self.max_deg - self.min_deg + 1, 2),
-        name=self.name + '_deg_slice')
+        name=f'{self.name}_deg_slice',
+    )
     self.membership_placeholder = tf.placeholder(
-        dtype='int32', shape=(None,), name=self.name + '_membership')
+        dtype='int32', shape=(None, ), name=f'{self.name}_membership')
 
     # Define the list of tensors to be used as topology
     self.topology = [self.deg_slice_placeholder, self.membership_placeholder]
@@ -177,17 +179,18 @@ class DTNNGraphTopology(GraphTopology):
     self.steps = np.expand_dims(self.steps, 0)
 
     self.atom_number_placeholder = tf.placeholder(
-        dtype='int32', shape=(None,), name=self.name + '_atom_number')
+        dtype='int32', shape=(None, ), name=f'{self.name}_atom_number')
     self.distance_placeholder = tf.placeholder(
         dtype='float32',
         shape=(None, self.n_distance),
-        name=self.name + '_distance')
+        name=f'{self.name}_distance',
+    )
     self.atom_membership_placeholder = tf.placeholder(
-        dtype='int32', shape=(None,), name=self.name + '_atom_membership')
+        dtype='int32', shape=(None, ), name=f'{self.name}_atom_membership')
     self.distance_membership_i_placeholder = tf.placeholder(
-        dtype='int32', shape=(None,), name=self.name + '_distance_membership_i')
+        dtype='int32', shape=(None, ), name=f'{self.name}_distance_membership_i')
     self.distance_membership_j_placeholder = tf.placeholder(
-        dtype='int32', shape=(None,), name=self.name + '_distance_membership_j')
+        dtype='int32', shape=(None, ), name=f'{self.name}_distance_membership_j')
 
     # Define the list of tensors to be used as topology
     self.topology = [
@@ -253,15 +256,13 @@ class DTNNGraphTopology(GraphTopology):
     distance_membership_i = np.concatenate(distance_membership_i)
     distance_membership_j = np.concatenate(distance_membership_j)
     atom_membership = np.concatenate(atom_membership)
-    # Generate dicts
-    dict_DTNN = {
+    return {
         self.atom_number_placeholder: atom_number,
         self.distance_placeholder: distance,
         self.atom_membership_placeholder: atom_membership,
         self.distance_membership_i_placeholder: distance_membership_i,
-        self.distance_membership_j_placeholder: distance_membership_j
+        self.distance_membership_j_placeholder: distance_membership_j,
     }
-    return dict_DTNN
 
 
 class DAGGraphTopology(GraphTopology):
@@ -285,31 +286,26 @@ class DAGGraphTopology(GraphTopology):
     self.atom_features_placeholder = tf.placeholder(
         dtype='float32',
         shape=(None, self.n_atom_feat),
-        name=self.name + '_atom_features')
+        name=f'{self.name}_atom_features',
+    )
 
     self.parents_placeholder = tf.placeholder(
         dtype='int32',
         shape=(None, self.max_atoms, self.max_atoms),
-        # molecule * atom(graph) => step => features
-        name=self.name + '_parents')
+        name=f'{self.name}_parents',
+    )
 
     self.calculation_orders_placeholder = tf.placeholder(
-        dtype='int32',
-        shape=(None, self.max_atoms),
-        # molecule * atom(graph) => step
-        name=self.name + '_orders')
+        dtype='int32', shape=(None, self.max_atoms), name=f'{self.name}_orders')
 
     self.calculation_masks_placeholder = tf.placeholder(
-        dtype='bool',
-        shape=(None, self.max_atoms),
-        # molecule * atom(graph) => step
-        name=self.name + '_masks')
+        dtype='bool', shape=(None, self.max_atoms), name=f'{self.name}_masks')
 
     self.membership_placeholder = tf.placeholder(
-        dtype='int32', shape=(None,), name=self.name + '_membership')
+        dtype='int32', shape=(None, ), name=f'{self.name}_membership')
 
     self.n_atoms_placeholder = tf.placeholder(
-        dtype='int32', shape=(), name=self.name + '_n_atoms')
+        dtype='int32', shape=(), name=f'{self.name}_n_atoms')
 
     # Define the list of tensors to be used as topology
     self.topology = [
@@ -371,16 +367,14 @@ class DAGGraphTopology(GraphTopology):
     calculation_masks = np.concatenate(calculation_masks, axis=0)
     membership = np.array(membership)
 
-    atoms_dict = {
+    return {
         self.atom_features_placeholder: atoms_all,
         self.parents_placeholder: parents_all,
         self.calculation_orders_placeholder: calculation_orders,
         self.calculation_masks_placeholder: calculation_masks,
         self.membership_placeholder: membership,
-        self.n_atoms_placeholder: n_atoms
+        self.n_atoms_placeholder: n_atoms,
     }
-
-    return atoms_dict
 
 
 class WeaveGraphTopology(GraphTopology):
@@ -413,21 +407,25 @@ class WeaveGraphTopology(GraphTopology):
     self.atom_features_placeholder = tf.placeholder(
         dtype='float32',
         shape=(None, self.max_atoms, self.n_atom_feat),
-        name=self.name + '_atom_features')
+        name=f'{self.name}_atom_features',
+    )
     self.atom_mask_placeholder = tf.placeholder(
         dtype='float32',
         shape=(None, self.max_atoms),
-        name=self.name + '_atom_mask')
+        name=f'{self.name}_atom_mask',
+    )
     self.pair_features_placeholder = tf.placeholder(
         dtype='float32',
         shape=(None, self.max_atoms, self.max_atoms, self.n_pair_feat),
-        name=self.name + '_pair_features')
+        name=f'{self.name}_pair_features',
+    )
     self.pair_mask_placeholder = tf.placeholder(
         dtype='float32',
         shape=(None, self.max_atoms, self.max_atoms),
-        name=self.name + '_pair_mask')
+        name=f'{self.name}_pair_mask',
+    )
     self.membership_placeholder = tf.placeholder(
-        dtype='int32', shape=(None,), name=self.name + '_membership')
+        dtype='int32', shape=(None, ), name=f'{self.name}_membership')
     # Define the list of tensors to be used as topology
     self.topology = [self.atom_mask_placeholder, self.pair_mask_placeholder]
     self.inputs = [self.atom_features_placeholder]
@@ -470,22 +468,20 @@ class WeaveGraphTopology(GraphTopology):
           np.pad(mol.get_pair_features(), ((0, max_atoms - n_atoms), (
               0, max_atoms - n_atoms), (0, 0)), 'constant'))
       pair_mask.append(np.array([[1]*n_atoms + [0]*(max_atoms-n_atoms)]*n_atoms + \
-                       [[0]*max_atoms]*(max_atoms-n_atoms), dtype=float))
+                         [[0]*max_atoms]*(max_atoms-n_atoms), dtype=float))
       membership.extend([im] * n_atoms)
     atom_feat = np.stack(atom_feat)
     pair_feat = np.stack(pair_feat)
     atom_mask = np.stack(atom_mask)
     pair_mask = np.stack(pair_mask)
     membership = np.array(membership)
-    # Generate dicts
-    dict_DTNN = {
+    return {
         self.atom_features_placeholder: atom_feat,
         self.pair_features_placeholder: pair_feat,
         self.atom_mask_placeholder: atom_mask,
         self.pair_mask_placeholder: pair_mask,
-        self.membership_placeholder: membership
+        self.membership_placeholder: membership,
     }
-    return dict_DTNN
 
 
 class AlternateWeaveGraphTopology(GraphTopology):
@@ -522,17 +518,19 @@ class AlternateWeaveGraphTopology(GraphTopology):
     self.atom_features_placeholder = tf.placeholder(
         dtype='float32',
         shape=(None, self.n_atom_feat),
-        name=self.name + '_atom_features')
+        name=f'{self.name}_atom_features',
+    )
     self.pair_features_placeholder = tf.placeholder(
         dtype='float32',
         shape=(None, self.n_pair_feat),
-        name=self.name + '_pair_features')
+        name=f'{self.name}_pair_features',
+    )
     self.pair_split_placeholder = tf.placeholder(
-        dtype='int32', shape=(None,), name=self.name + '_pair_split')
+        dtype='int32', shape=(None, ), name=f'{self.name}_pair_split')
     self.atom_split_placeholder = tf.placeholder(
-        dtype='int32', shape=(None,), name=self.name + '_atom_split')
+        dtype='int32', shape=(None, ), name=f'{self.name}_atom_split')
     self.atom_to_pair_placeholder = tf.placeholder(
-        dtype='int32', shape=(None, 2), name=self.name + '_atom_to_pair')
+        dtype='int32', shape=(None, 2), name=f'{self.name}_atom_to_pair')
 
     # Define the list of tensors to be used as topology
     self.topology = [
@@ -593,12 +591,10 @@ class AlternateWeaveGraphTopology(GraphTopology):
     pair_feat = np.concatenate(pair_feat, axis=0)
     atom_to_pair = np.concatenate(atom_to_pair, axis=0)
     atom_split = np.array(atom_split)
-    # Generate dicts
-    dict_DTNN = {
+    return {
         self.atom_features_placeholder: atom_feat,
         self.pair_features_placeholder: pair_feat,
         self.pair_split_placeholder: pair_split,
         self.atom_split_placeholder: atom_split,
-        self.atom_to_pair_placeholder: atom_to_pair
+        self.atom_to_pair_placeholder: atom_to_pair,
     }
-    return dict_DTNN

@@ -60,23 +60,22 @@ class GraphData:
             Additional attributes and their values
         """
         # validate params
-        if isinstance(node_features, np.ndarray) is False:
+        if not isinstance(node_features, np.ndarray):
             raise ValueError('node_features must be np.ndarray.')
 
-        if isinstance(edge_index, np.ndarray) is False:
+        if not isinstance(edge_index, np.ndarray):
             raise ValueError('edge_index must be np.ndarray.')
-        elif issubclass(edge_index.dtype.type, np.integer) is False:
+        elif not issubclass(edge_index.dtype.type, np.integer):
             raise ValueError('edge_index.dtype must contains integers.')
         elif edge_index.shape[0] != 2:
             raise ValueError('The shape of edge_index is [2, num_edges].')
 
-        # np.max() method works only for a non-empty array, so size of the array should be non-zero
         elif (edge_index.size != 0) and (np.max(edge_index) >=
                                          len(node_features)):
             raise ValueError('edge_index contains the invalid node number.')
 
         if edge_features is not None:
-            if isinstance(edge_features, np.ndarray) is False:
+            if not isinstance(edge_features, np.ndarray):
                 raise ValueError('edge_features must be np.ndarray or None.')
             elif edge_index.shape[1] != edge_features.shape[0]:
                 raise ValueError(
@@ -84,7 +83,7 @@ class GraphData:
                           same as the second dimension of edge_index.')
 
         if node_pos_features is not None:
-            if isinstance(node_pos_features, np.ndarray) is False:
+            if not isinstance(node_pos_features, np.ndarray):
                 raise ValueError(
                     'node_pos_features must be np.ndarray or None.')
             elif node_pos_features.shape[0] != node_features.shape[0]:
@@ -115,16 +114,15 @@ class GraphData:
         else:
             edge_features_str = "None"
 
-        out = "%s(node_features=%s, edge_index=%s, edge_features=%s" % (
-            cls, node_features_str, edge_index_str, edge_features_str)
+        out = f"{cls}(node_features={node_features_str}, edge_index={edge_index_str}, edge_features={edge_features_str}"
         # Adding shapes of kwargs
         for key, value in self.kwargs.items():
             if isinstance(value, np.ndarray):
-                out += (', ' + key + '=' + str(list(value.shape)))
+                out += f', {key}={list(value.shape)}'
             elif isinstance(value, str):
-                out += (', ' + key + '=' + value)
-            elif isinstance(value, int) or isinstance(value, float):
-                out += (', ' + key + '=' + str(value))
+                out += f', {key}={value}'
+            elif isinstance(value, (int, float)):
+                out += f', {key}={str(value)}'
         out += ')'
         return out
 
@@ -153,9 +151,10 @@ class GraphData:
         node_pos_features = self.node_pos_features
         if node_pos_features is not None:
             node_pos_features = torch.from_numpy(self.node_pos_features).float()
-        kwargs = {}
-        for key, value in self.kwargs.items():
-            kwargs[key] = torch.from_numpy(value).float()
+        kwargs = {
+            key: torch.from_numpy(value).float()
+            for key, value in self.kwargs.items()
+        }
         return Data(x=torch.from_numpy(self.node_features).float(),
                     edge_index=torch.from_numpy(self.edge_index).long(),
                     edge_attr=edge_features,

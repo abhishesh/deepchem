@@ -95,17 +95,16 @@ class MultitaskGraphRegressor(Model):
 
     feat = self.model.return_outputs()
     feat_size = feat.get_shape()[-1].value
-    outputs = []
-    for task in range(self.n_tasks):
-      outputs.append(
-          tf.squeeze(
-              model_ops.fully_connected_layer(
-                  tensor=feat,
-                  size=1,
-                  weight_init=tf.truncated_normal(
-                      shape=[feat_size, 1], stddev=0.01),
-                  bias_init=tf.constant(value=0., shape=[1]))))
-    return outputs
+    return [
+        tf.squeeze(
+            model_ops.fully_connected_layer(
+                tensor=feat,
+                size=1,
+                weight_init=tf.truncated_normal(
+                    shape=[feat_size, 1], stddev=0.01),
+                bias_init=tf.constant(value=0.0, shape=[1]),
+            )) for _ in range(self.n_tasks)
+    ]
 
   def add_optimizer(self):
     if self.optimizer_type == "adam":
@@ -133,14 +132,7 @@ class MultitaskGraphRegressor(Model):
     # Get graph information
     atoms_dict = self.graph_topology.batch_to_feed_dict(X_b)
 
-    # TODO (hraut->rhbarath): num_datapoints should be a vector, with ith element being
-    # the number of labeled data points in target_i. This is to normalize each task
-    # num_dat_dict = {self.num_datapoints_placeholder : self.}
-
-    # Get other optimizer information
-    # TODO(rbharath): Figure out how to handle phase appropriately
-    feed_dict = merge_dicts([targets_dict, atoms_dict])
-    return feed_dict
+    return merge_dicts([targets_dict, atoms_dict])
 
   def add_training_loss(self, final_loss, outputs):
     """Computes loss using logits."""
@@ -231,7 +223,4 @@ class DTNNMultitaskGraphRegressor(MultitaskGraphRegressor):
         dtype='float32', shape=(None, self.n_tasks), name="weight_placholder")
 
     feat = self.model.return_outputs()
-    outputs = []
-    for task in range(self.n_tasks):
-      outputs.append(feat[:, task])
-    return outputs
+    return [feat[:, task] for task in range(self.n_tasks)]

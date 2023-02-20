@@ -16,9 +16,9 @@ train_dataset, valid_dataset, test_dataset = delaney_datasets
 # Fit models
 metric = dc.metrics.Metric(dc.metrics.pearson_r2_score, np.mean)
 
-max_train = max([mol.get_num_atoms() for mol in train_dataset.X])
-max_valid = max([mol.get_num_atoms() for mol in valid_dataset.X])
-max_test = max([mol.get_num_atoms() for mol in test_dataset.X])
+max_train = max(mol.get_num_atoms() for mol in train_dataset.X)
+max_valid = max(mol.get_num_atoms() for mol in valid_dataset.X)
+max_test = max(mol.get_num_atoms() for mol in test_dataset.X)
 max_atoms = max([max_train, max_valid, max_test])
 
 # Args

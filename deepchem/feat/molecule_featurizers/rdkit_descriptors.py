@@ -96,14 +96,14 @@ class RDKitDescriptors(MolecularFeaturizer):
         self.reqd_properties = {}
         self.normalized_desc: Dict[str, Callable] = {}
 
-        all_descriptors = {name: func for name, func in Descriptors.descList}
+        all_descriptors = dict(Descriptors.descList)
 
         if not descriptors:
             # user has not specified a descriptor list
             for desc_name, function in all_descriptors.items():
-                if self.use_fragment is False and desc_name.startswith('fr_'):
+                if not self.use_fragment and desc_name.startswith('fr_'):
                     continue
-                if self.use_bcut2d is False and desc_name.startswith('BCUT2D_'):
+                if not self.use_bcut2d and desc_name.startswith('BCUT2D_'):
                     continue
                 self.reqd_properties[desc_name] = function
         else:
@@ -111,8 +111,7 @@ class RDKitDescriptors(MolecularFeaturizer):
                 if desc_name in all_descriptors:
                     self.reqd_properties[desc_name] = all_descriptors[desc_name]
                 else:
-                    logging.error("Unable to find specified property %s" %
-                                  desc_name)
+                    logging.error(f"Unable to find specified property {desc_name}")
 
         # creates normalized functions dictionary if normalized features are required
         if is_normalized:

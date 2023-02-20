@@ -60,7 +60,7 @@ def construct_df(pdb_stem_directory, pdbbind_label_file, pdbbind_df_joblib):
     print("Extracted Input Files:")
     print (ligand_pdb, protein_pdb, ligand_mol2)
     if not ligand_pdb or not protein_pdb or not ligand_mol2:
-      raise ValueError("Required files not present for %s" % pdb_dir)
+      raise ValueError(f"Required files not present for {pdb_dir}")
     ligand_pdb_path = os.path.join(pdb_dir, ligand_pdb)
     protein_pdb_path = os.path.join(pdb_dir, protein_pdb)
     ligand_mol2_path = os.path.join(pdb_dir, ligand_mol2)
@@ -82,7 +82,7 @@ def construct_df(pdb_stem_directory, pdbbind_label_file, pdbbind_df_joblib):
     if ligand_mol is None:
       continue
     smiles = Chem.MolToSmiles(ligand_mol)
-    complex_id = "%s%s" % (pdb_id, smiles)
+    complex_id = f"{pdb_id}{smiles}"
     label = labels[pdb_id]
     df_rows.append([pdb_id, smiles, complex_id, protein_pdb_lines,
                     ligand_pdb_lines, ligand_mol2_lines, label])

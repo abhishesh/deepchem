@@ -26,12 +26,10 @@ def load_images_DR(split='random', seed=None):
                )
 
   image_names = os.listdir(images_path)
-  raw_images = []
-  for im in image_names:
-    if im.endswith('.jpeg') and not im.startswith(
-        'cut_') and not 'cut_' + im in image_names:
-      raw_images.append(im)
-  if len(raw_images) > 0:
+  if raw_images := [
+      im for im in image_names if im.endswith('.jpeg')
+      and not im.startswith('cut_') and 'cut_' + im not in image_names
+  ]:
     cut_raw_images(raw_images, images_path)
 
   image_names = [
@@ -53,19 +51,18 @@ def load_images_DR(split='random', seed=None):
   loader = deepchem.data.ImageLoader()
   dat = loader.featurize(
       image_full_paths, labels=labels, weights=weights)
-  if split == None:
+  if split is None:
     return dat
 
   splitters = {
       'index': deepchem.splits.IndexSplitter(),
       'random': deepchem.splits.RandomSplitter()
   }
-  if not seed is None:
+  if seed is not None:
     np.random.seed(seed)
   splitter = splitters[split]
   train, valid, test = splitter.train_valid_test_split(dat)
-  all_dataset = (train, valid, test)
-  return all_dataset
+  return train, valid, test
 
 
 def cut_raw_images(all_images, path):

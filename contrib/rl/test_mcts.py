@@ -20,6 +20,8 @@ class TestMCTS(unittest.TestCase):
     # game).  The average reward for any bet is slightly negative, so the best
     # strategy is to walk away.
 
+
+
     class RouletteEnvironment(dc.rl.Environment):
 
       def __init__(self):
@@ -32,19 +34,14 @@ class TestMCTS(unittest.TestCase):
           return 0.0
         wheel = np.random.randint(37)
         if wheel == 0:
-          if action == 0:
-            return 35.0
-          return -1.0
-        if action != 0 and wheel % 2 == action % 2:
-          return 1.0
-        return -1.0
+          return 35.0 if action == 0 else -1.0
+        return 1.0 if action != 0 and wheel % 2 == action % 2 else -1.0
 
       def reset(self):
         self._terminated = False
 
-    env = RouletteEnvironment()
 
-    # This policy just learns a constant probability for each action, and a constant for the value.
+    env = RouletteEnvironment()
 
     class TestPolicy(dc.rl.Policy):
 

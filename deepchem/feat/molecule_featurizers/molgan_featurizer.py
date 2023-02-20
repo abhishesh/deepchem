@@ -107,17 +107,13 @@ class MolGanFeaturizer(MolecularFeaturizer):
             self.bond_labels = bond_labels
 
         # atom labels
-        if atom_labels is None:
-            self.atom_labels = [0, 6, 7, 8, 9]  # C,N,O,F
-        else:
-            self.atom_labels = atom_labels
-
+        self.atom_labels = [0, 6, 7, 8, 9] if atom_labels is None else atom_labels
         # create bond encoders and decoders
         self.bond_encoder = {l: i for i, l in enumerate(self.bond_labels)}
-        self.bond_decoder = {i: l for i, l in enumerate(self.bond_labels)}
+        self.bond_decoder = dict(enumerate(self.bond_labels))
         # create atom encoders and decoders
         self.atom_encoder = {l: i for i, l in enumerate(self.atom_labels)}
-        self.atom_decoder = {i: l for i, l in enumerate(self.atom_labels)}
+        self.atom_decoder = dict(enumerate(self.atom_labels))
 
     def _featurize(self, datapoint: RDKitMol,
                    **kwargs) -> Optional[GraphMatrix]:
@@ -233,10 +229,7 @@ class MolGanFeaturizer(MolecularFeaturizer):
             try:
                 smiles = Chem.MolToSmiles(mol)
                 smiles = max(smiles.split("."), key=len)
-                if "*" not in smiles:
-                    mol = Chem.MolFromSmiles(smiles)
-                else:
-                    mol = None
+                mol = Chem.MolFromSmiles(smiles) if "*" not in smiles else None
             except Exception:
                 mol = None
 
@@ -263,12 +256,7 @@ class MolGanFeaturizer(MolecularFeaturizer):
         """
 
         # Special case handling of single molecule
-        if isinstance(graphs, GraphMatrix):
-            graphs = [graphs]
-        else:
-            # Convert iterables to list
-            graphs = list(graphs)
-
+        graphs = [graphs] if isinstance(graphs, GraphMatrix) else list(graphs)
         molecules = []
         for i, gr in enumerate(graphs):
             if i % log_every_n == 0:
@@ -282,7 +270,7 @@ class MolGanFeaturizer(MolecularFeaturizer):
                     i,
                     gr,
                 )
-                logger.warning("Exception message: {}".format(e))
+                logger.warning(f"Exception message: {e}")
                 molecules.append(np.array([]))
 
         return np.asarray(molecules)

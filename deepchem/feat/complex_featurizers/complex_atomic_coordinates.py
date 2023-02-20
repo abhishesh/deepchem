@@ -37,8 +37,7 @@ def compute_neighbor_list(coords, neighbor_cutoff, max_num_neighbors,
             if box_size is not None:
                 delta -= np.round(delta / box_size) * box_size
             dist = np.linalg.norm(delta, axis=1)
-            sorted_neighbors = list(zip(dist, neighbors[i]))
-            sorted_neighbors.sort()
+            sorted_neighbors = sorted(zip(dist, neighbors[i]))
             neighbor_list[i] = [
                 sorted_neighbors[j][1] for j in range(max_num_neighbors)
             ]
@@ -70,9 +69,10 @@ class NeighborListAtomicCoordinates(Featurizer):
                  periodic_box_size=None):
         if neighbor_cutoff <= 0:
             raise ValueError("neighbor_cutoff must be positive value.")
-        if max_num_neighbors is not None:
-            if not isinstance(max_num_neighbors, int) or max_num_neighbors <= 0:
-                raise ValueError("max_num_neighbors must be positive integer.")
+        if max_num_neighbors is not None and (
+            not isinstance(max_num_neighbors, int) or max_num_neighbors <= 0
+        ):
+            raise ValueError("max_num_neighbors must be positive integer.")
         self.max_num_neighbors = max_num_neighbors
         self.neighbor_cutoff = neighbor_cutoff
         self.periodic_box_size = periodic_box_size
@@ -109,9 +109,10 @@ class NeighborListComplexAtomicCoordinates(ComplexFeaturizer):
     def __init__(self, max_num_neighbors=None, neighbor_cutoff=4):
         if neighbor_cutoff <= 0:
             raise ValueError("neighbor_cutoff must be positive value.")
-        if max_num_neighbors is not None:
-            if not isinstance(max_num_neighbors, int) or max_num_neighbors <= 0:
-                raise ValueError("max_num_neighbors must be positive integer.")
+        if max_num_neighbors is not None and (
+            not isinstance(max_num_neighbors, int) or max_num_neighbors <= 0
+        ):
+            raise ValueError("max_num_neighbors must be positive integer.")
         self.max_num_neighbors = max_num_neighbors
         self.neighbor_cutoff = neighbor_cutoff
         # Type of data created by this featurizer
@@ -224,7 +225,7 @@ class AtomicConvFeaturizer(ComplexFeaturizer):
             return None
 
         except ImportError as e:
-            logging.warning("%s" % e)
+            logging.warning(f"{e}")
             raise ImportError(e)
 
         system_mol = merge_molecules([frag1_mol, frag2_mol])
@@ -250,11 +251,11 @@ class AtomicConvFeaturizer(ComplexFeaturizer):
             )
             return None
         except ImportError as e:
-            logging.warning("%s" % e)
+            logging.warning(f"{e}")
             raise ImportError(e)
 
         return frag1_coords, frag1_neighbor_list, frag1_z, frag2_coords, frag2_neighbor_list, frag2_z, \
-               system_coords, system_neighbor_list, system_z
+                   system_coords, system_neighbor_list, system_z
 
     def get_Z_matrix(self, mol, max_atoms):
         if len(mol.GetAtoms()) > max_atoms:

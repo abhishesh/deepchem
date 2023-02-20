@@ -113,7 +113,7 @@ class TorchMultitaskModel(Model):
     elif self.optimizer == 'sgd':
       train_op = torch.optim.SGD(self.trainables, lr=self.learning_rate)
     else:
-      raise NotImplementedError('Unsupported optimizer %s' % self.optimizer)
+      raise NotImplementedError(f'Unsupported optimizer {self.optimizer}')
     return train_op
 
   def fit(self,

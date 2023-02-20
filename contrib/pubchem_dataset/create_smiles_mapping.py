@@ -14,11 +14,11 @@ def main():
   sdf_dir = os.path.join(data_dir, "SDF")
 
   compound_read_count = 0
-  keys = list()
-  values = list()
+  keys = []
+  values = []
   overall_start = time.time()
 
-  all_paths = list()
+  all_paths = []
 
   for path, dirs, filenames in os.walk(sdf_dir):
     for filename in filenames:
@@ -59,7 +59,7 @@ def main():
   secs_elapsed = overall_end - overall_start
   print("Parsed all smiles in: {0} seconds, or {1} minutes, or {2} hours".
         format(secs_elapsed, secs_elapsed / 60, secs_elapsed / 3600))
-  print("Total length of: {}".format(len(keys)))
+  print(f"Total length of: {len(keys)}")
   with open(os.path.join(data_dir, "/pubchemsmiles_tuple.pickle"), "wb") as f:
     pickle.dump((keys, values), f)
   print("Done")

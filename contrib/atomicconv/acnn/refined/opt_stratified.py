@@ -73,7 +73,7 @@ rp = create_symmetry_parameters(radial)
 # Model hyperparameters
 layer_sizes = [32, 32, 16]
 weight_init_stddevs = [1 / np.sqrt(x) for x in layer_sizes]
-bias_init_consts = [0. for x in layer_sizes]
+bias_init_consts = [0. for _ in layer_sizes]
 penalty_type = "l2"
 penalty = 0.
 dropouts = [0.25, 0.25, 0.]

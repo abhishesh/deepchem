@@ -183,8 +183,7 @@ def QuadWeightedKappa(y, y_pred):
   for i in range(classes_y.shape[0]):
     for j in range(classes_y.shape[0]):
       w[i, j] = float((i - j)**2) / (classes_y.shape[0] - 1)**2
-  re = 1 - np.sum(w * cm) / np.sum(w * E)
-  return re
+  return 1 - np.sum(w * cm) / np.sum(w * E)
 
 
 class DRAugment(Layer):

@@ -378,7 +378,7 @@ class TestSupports(unittest.TestCase):
         support_generator = dc.data.SupportGenerator(dataset, n_pos, n_neg,
                                                      n_trials)
 
-        for ind, (task, support) in enumerate(support_generator):
+        for task, support in support_generator:
             task_dataset = dc.data.get_task_dataset_minus_support(
                 dataset, support, task)
 

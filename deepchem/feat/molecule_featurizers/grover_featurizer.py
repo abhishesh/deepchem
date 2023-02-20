@@ -119,7 +119,6 @@ class GroverFeaturizer(MolecularFeaturizer):
         smiles = Chem.MolToSmiles(mol)
         n_atoms = mol.GetNumAtoms()  # number of atoms
         n_bonds = 0  # number of bonds
-        f_atoms = []  # mapping from atom index to atom features
         f_bonds = [
         ]  # mapping from bond index to concat(from_atom, bond) features
         a2b: List[List[int]] = [
@@ -132,12 +131,8 @@ class GroverFeaturizer(MolecularFeaturizer):
         # it's reverse bond is a1 --> a2
         edge_index = []
 
-        for _, atom in enumerate(mol.GetAtoms()):
-            f_atoms.append(self._get_atom_features(atom, mol))
-
-        for i in range(n_atoms):
-            a2b.append([])
-
+        f_atoms = [self._get_atom_features(atom, mol) for atom in mol.GetAtoms()]
+        a2b.extend([] for _ in range(n_atoms))
         for a1 in range(n_atoms):
             for a2 in range(a1 + 1, n_atoms):
                 bond = mol.GetBondBetweenAtoms(a1, a2)
@@ -149,10 +144,7 @@ class GroverFeaturizer(MolecularFeaturizer):
                     continue
 
                 f_bond = bond_features(bond)
-                # Always treat the bond as directed.
-                f_bonds.append(f_atoms[a1] + f_bond)
-                f_bonds.append(f_atoms[a2] + f_bond)
-
+                f_bonds.extend((f_atoms[a1] + f_bond, f_atoms[a2] + f_bond))
                 b1 = n_bonds
                 b2 = b1 + 1
                 a2b[a2].append(
@@ -161,19 +153,19 @@ class GroverFeaturizer(MolecularFeaturizer):
                 a2b[a1].append(
                     b2)  # atom1 has b2 as incoming edge. b2 = a2 --> a1
                 b2a.append(a2)
-                b2revb.append(b2)
-                b2revb.append(b1)
+                b2revb.extend((b2, b1))
                 n_bonds += 2
                 edge_index.extend([[a1, a2], [a2, a1]])
 
-        molgraph = GraphData(node_features=np.asarray(f_atoms),
-                             edge_index=np.asarray(edge_index).T,
-                             edge_features=np.asarray(f_bonds),
-                             smiles=smiles,
-                             b2revb=b2revb,
-                             a2b=a2b,
-                             b2a=b2a)
-        return molgraph
+        return GraphData(
+            node_features=np.asarray(f_atoms),
+            edge_index=np.asarray(edge_index).T,
+            edge_features=np.asarray(f_bonds),
+            smiles=smiles,
+            b2revb=b2revb,
+            a2b=a2b,
+            b2a=b2a,
+        )
 
     def _featurize(self, datapoint: RDKitMol, **kwargs) -> GraphData:
         """Featurize a single input molecule.

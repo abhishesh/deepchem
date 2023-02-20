@@ -68,7 +68,7 @@ class CoulombMatrix(MolecularFeaturizer):
             Random seed to use.
 
         """
-        self.max_atoms = int(max_atoms)
+        self.max_atoms = max_atoms
         self.remove_hydrogens = remove_hydrogens
         self.randomize = randomize
         self.upper_tri = upper_tri
@@ -186,7 +186,7 @@ class CoulombMatrix(MolecularFeaturizer):
         rval = []
         row_norms = np.asarray([np.linalg.norm(row) for row in m], dtype=float)
         rng = np.random.RandomState(self.seed)
-        for i in range(self.n_samples):
+        for _ in range(self.n_samples):
             e = rng.normal(size=row_norms.size)
             p = np.argsort(row_norms + e)
             new = m[p][:, p]  # permute rows first, then columns
@@ -269,7 +269,7 @@ class CoulombMatrixEig(CoulombMatrix):
             Random seed to use.
 
         """
-        self.max_atoms = int(max_atoms)
+        self.max_atoms = max_atoms
         self.remove_hydrogens = remove_hydrogens
         self.randomize = randomize
         self.n_samples = n_samples

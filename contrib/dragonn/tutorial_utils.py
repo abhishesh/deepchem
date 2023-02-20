@@ -57,7 +57,7 @@ def plot_sequence_filters(dnn):
     ax = fig.add_subplot(num_plots_per_axis, num_plots_per_axis, i + 1)
     add_letters_to_axis(ax, conv_filter.T)
     ax.axis("off")
-    ax.set_title("Filter %s" % (str(i + 1)))
+    ax.set_title(f"Filter {str(i + 1)}")
 
 
 def plot_SequenceDNN_layer_outputs(dnn, simulation_data):
@@ -165,12 +165,14 @@ def interpret_data_with_SequenceDNN(dnn, simulation_data):
       for key, index in (('Positive', pos_indx), ('Negative', neg_indx))
   }
   # organize legends
-  motif_label_dict = {}
-  motif_label_dict['Motif Scores'] = simulation_data.motif_names
-  if len(simulation_data.motif_names) == dnn.num_tasks:
-    motif_label_dict['ISM Scores'] = simulation_data.motif_names
-  else:
-    motif_label_dict['ISM Scores'] = ['_'.join(simulation_data.motif_names)]
+  motif_label_dict = {
+      'Motif Scores':
+      simulation_data.motif_names,
+      'ISM Scores':
+      simulation_data.motif_names
+      if len(simulation_data.motif_names) == dnn.num_tasks else
+      ['_'.join(simulation_data.motif_names)],
+  }
   motif_label_dict['DeepLIFT Scores'] = motif_label_dict['ISM Scores']
   # plot scores and highlight motif site locations
   seq_length = pos_X.shape[-1]

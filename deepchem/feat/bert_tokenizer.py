@@ -5,7 +5,6 @@ try:
 except ModuleNotFoundError:
     raise ImportError(
         'Transformers must be installed for BertFeaturizer to be used!')
-    pass
 
 
 class BertFeaturizer(Featurizer):
@@ -52,6 +51,4 @@ class BertFeaturizer(Featurizer):
             List containing three lists: the `input_ids`, 'token_type_ids', and `attention_mask`.
         """
 
-        # the encoding is natively a dictionary with keys 'input_ids', 'token_type_ids', and 'attention_mask'
-        encoding = list(self.tokenizer(datapoint, **kwargs).values())
-        return encoding
+        return list(self.tokenizer(datapoint, **kwargs).values())

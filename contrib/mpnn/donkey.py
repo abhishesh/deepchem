@@ -31,8 +31,7 @@ def generate_scaffold(smiles, include_chirality=False):
   """Compute the Bemis-Murcko scaffold for a SMILES string."""
   mol = Chem.MolFromSmiles(smiles)
   engine = ScaffoldGenerator(include_chirality=include_chirality)
-  scaffold = engine.get_scaffold(mol)
-  return scaffold
+  return engine.get_scaffold(mol)
 
 def split(dataset,
           frac_train=.80,

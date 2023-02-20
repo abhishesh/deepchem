@@ -21,22 +21,35 @@ def combine_mdtraj(protein, ligand):
 def visualize_complex(complex_mdtraj):
   ligand_atoms = [a.index for a in complex_mdtraj.topology.atoms if "LIG" in str(a.residue)]
   binding_pocket_atoms = md.compute_neighbors(complex_mdtraj, 0.5, ligand_atoms)[0]
-  binding_pocket_residues = list(set([complex_mdtraj.topology.atom(a).residue.resSeq for a in binding_pocket_atoms]))
+  binding_pocket_residues = list({
+      complex_mdtraj.topology.atom(a).residue.resSeq
+      for a in binding_pocket_atoms
+  })
   binding_pocket_residues = [str(r) for r in binding_pocket_residues]
   binding_pocket_residues = " or ".join(binding_pocket_residues)
 
   traj = nglview.MDTrajTrajectory( complex_mdtraj ) # load file from RCSB PDB
   ngltraj = nglview.NGLWidget( traj )
   ngltraj.representations = [
-  { "type": "cartoon", "params": {
-  "sele": "protein", "color": "residueindex"
-  } },
-  { "type": "licorice", "params": {
-  "sele": "(not hydrogen) and (%s)" %  binding_pocket_residues
-  } },
-  { "type": "ball+stick", "params": {
-  "sele": "LIG"
-  } }
+      {
+          "type": "cartoon",
+          "params": {
+              "sele": "protein",
+              "color": "residueindex"
+          },
+      },
+      {
+          "type": "licorice",
+          "params": {
+              "sele": f"(not hydrogen) and ({binding_pocket_residues})"
+          },
+      },
+      {
+          "type": "ball+stick",
+          "params": {
+              "sele": "LIG"
+          }
+      },
   ]
   return ngltraj
 
@@ -52,15 +65,15 @@ def convert_lines_to_mdtraj(molecule_lines):
   molecule_file = os.path.join(tempdir, "molecule.pdb")
   with open(molecule_file, "wb") as f:
     f.writelines(molecule_lines)
-  molecule_mdtraj = md.load(molecule_file)
-  return molecule_mdtraj
+  return md.load(molecule_file)
 
 def display_images(filenames):
-    """Helper to pretty-print images."""
-    imagesList=''.join(
-        ["<img style='width: 140px; margin: 0px; float: left; border: 1px solid black;' src='%s' />"
-         % str(s) for s in sorted(filenames)])
-    display(HTML(imagesList))
+  """Helper to pretty-print images."""
+  imagesList = ''.join([
+      f"<img style='width: 140px; margin: 0px; float: left; border: 1px solid black;' src='{str(s)}' />"
+      for s in sorted(filenames)
+  ])
+  display(HTML(imagesList))
 
 def mols_to_pngs(mols, basename="test"):
     """Helper to write RDKit mols to png files."""

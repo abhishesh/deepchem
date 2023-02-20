@@ -42,8 +42,7 @@ def create_char_to_idx(filename: str,
 
     unique_char_list = list(char_set)
     unique_char_list += [PAD_TOKEN, OUT_OF_VOCAB_TOKEN]
-    char_to_idx = {letter: idx for idx, letter in enumerate(unique_char_list)}
-    return char_to_idx
+    return {letter: idx for idx, letter in enumerate(unique_char_list)}
 
 
 class SmilesToSeq(MolecularFeaturizer):
@@ -106,20 +105,14 @@ class SmilesToSeq(MolecularFeaturizer):
     def remove_pad(self, characters: List[str]) -> List[str]:
         """Removes PAD_TOKEN from the character list."""
         characters = characters[self.pad_len:len(characters) - self.pad_len]
-        chars = list()
-
-        for char in characters:
-            if char != PAD_TOKEN:
-                chars.append(char)
-        return chars
+        return [char for char in characters if char != PAD_TOKEN]
 
     def smiles_from_seq(self, seq: List[int]) -> str:
         """Reconstructs SMILES string from sequence."""
         characters = [self.idx_to_char[i] for i in seq]
 
         characters = self.remove_pad(characters)
-        smile = "".join([letter for letter in characters])
-        return smile
+        return "".join(list(characters))
 
     def _featurize(self, datapoint: RDKitMol, **kwargs) -> np.ndarray:
         """Featurizes a SMILES sequence.
@@ -159,5 +152,4 @@ class SmilesToSeq(MolecularFeaturizer):
         smile_list += [PAD_TOKEN] * self.pad_len
         smile_list = [PAD_TOKEN] * self.pad_len + smile_list
 
-        smile_seq = self.to_seq(smile_list)
-        return smile_seq
+        return self.to_seq(smile_list)

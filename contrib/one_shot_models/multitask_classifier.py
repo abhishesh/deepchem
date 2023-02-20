@@ -135,13 +135,7 @@ class MultitaskGraphClassifier(Model):
         dtype='float32', shape=(None, self.n_tasks), name="weight_placholder")
 
     feat = self.model.return_outputs()
-    ################################################################ DEBUG
-    #print("multitask classifier")
-    #print("feat")
-    #print(feat)
-    ################################################################ DEBUG
-    output = model_ops.multitask_logits(feat, self.n_tasks)
-    return output
+    return model_ops.multitask_logits(feat, self.n_tasks)
 
   def add_optimizer(self):
     if self.optimizer_type == "adam":
@@ -169,14 +163,7 @@ class MultitaskGraphClassifier(Model):
     # Get graph information
     atoms_dict = self.graph_topology.batch_to_feed_dict(X_b)
 
-    # TODO (hraut->rhbarath): num_datapoints should be a vector, with ith element being
-    # the number of labeled data points in target_i. This is to normalize each task
-    # num_dat_dict = {self.num_datapoints_placeholder : self.}
-
-    # Get other optimizer information
-    # TODO(rbharath): Figure out how to handle phase appropriately
-    feed_dict = merge_dicts([targets_dict, atoms_dict])
-    return feed_dict
+    return merge_dicts([targets_dict, atoms_dict])
 
   def add_training_loss(self, final_loss, logits):
     """Computes loss using logits."""
@@ -209,8 +196,9 @@ class MultitaskGraphClassifier(Model):
     """Replace logits with softmax outputs."""
     softmax = []
     with tf.name_scope('inference'):
-      for i, logits in enumerate(outputs):
-        softmax.append(tf.nn.softmax(logits, name='softmax_%d' % i))
+      softmax.extend(
+          tf.nn.softmax(logits, name='softmax_%d' % i)
+          for i, logits in enumerate(outputs))
     return softmax
 
   def fit(self,

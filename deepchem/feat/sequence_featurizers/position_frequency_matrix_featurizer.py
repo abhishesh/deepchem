@@ -75,9 +75,7 @@ class PFMFeaturizer(Featurizer):
             np.array(seq_one_hot), (0, 2, 1)
         )  # swap rows and columns to make rows the characters, columns the positions
 
-        pfm = np.sum(seq_one_hot_array, axis=0)
-
-        return pfm
+        return np.sum(seq_one_hot_array, axis=0)
 
 
 def PFM_to_PPM(pfm):

@@ -433,12 +433,12 @@ def test_disk_iterate_batch_size():
     solubility_dataset = load_solubility_data()
     X, y, _, _ = (solubility_dataset.X, solubility_dataset.y,
                   solubility_dataset.w, solubility_dataset.ids)
-    batch_sizes = []
-    for X, y, _, _ in solubility_dataset.iterbatches(3,
-                                                     epochs=2,
-                                                     pad_batches=False,
-                                                     deterministic=True):
-        batch_sizes.append(len(X))
+    batch_sizes = [
+        len(X)
+        for X, y, _, _ in solubility_dataset.iterbatches(
+            3, epochs=2, pad_batches=False, deterministic=True
+        )
+    ]
     assert [3, 3, 3, 1, 3, 3, 3, 1] == batch_sizes
 
 
@@ -671,7 +671,7 @@ def test_merge():
     num_tasks = 1
     num_datasets = 4
     datasets = []
-    for i in range(num_datasets):
+    for _ in range(num_datasets):
         Xi = np.random.rand(num_datapoints, num_features)
         yi = np.random.randint(2, size=(num_datapoints, num_tasks))
         wi = np.ones((num_datapoints, num_tasks))
@@ -733,8 +733,8 @@ def _validate_pytorch_dataset(dataset):
     # Test iterating out of order.
 
     ds = dataset.make_pytorch_dataset(epochs=2, deterministic=False)
-    id_to_index = dict((id, i) for i, id in enumerate(ids))
-    id_count = dict((id, 0) for id in ids)
+    id_to_index = {id: i for i, id in enumerate(ids)}
+    id_count = {id: 0 for id in ids}
     for iter_X, iter_y, iter_w, iter_id in ds:
         j = id_to_index[iter_id]
         np.testing.assert_array_equal(X[j, :], iter_X)
@@ -748,8 +748,8 @@ def _validate_pytorch_dataset(dataset):
     ds = dataset.make_pytorch_dataset(epochs=2,
                                       deterministic=False,
                                       batch_size=7)
-    id_to_index = dict((id, i) for i, id in enumerate(ids))
-    id_count = dict((id, 0) for id in ids)
+    id_to_index = {id: i for i, id in enumerate(ids)}
+    id_count = {id: 0 for id in ids}
     for iter_X, iter_y, iter_w, iter_id in ds:
         size = len(iter_id)
         assert size <= 7
@@ -766,7 +766,7 @@ def _validate_pytorch_dataset(dataset):
     import torch  # noqa
     ds = dataset.make_pytorch_dataset(epochs=2, deterministic=False)
     loader = torch.utils.data.DataLoader(ds, num_workers=3)
-    id_count = dict((id, 0) for id in ids)
+    id_count = {id: 0 for id in ids}
     for iter_X, iter_y, iter_w, iter_id in loader:
         j = id_to_index[iter_id[0]]
         np.testing.assert_array_equal(X[j, :], iter_X[0])
@@ -876,12 +876,12 @@ class TestDatasets(unittest.TestCase):
                       solubility_dataset.w, solubility_dataset.ids)
         solubility_dataset = dc.data.NumpyDataset.from_DiskDataset(
             solubility_dataset)
-        batch_sizes = []
-        for X, y, _, _ in solubility_dataset.iterbatches(3,
-                                                         epochs=2,
-                                                         pad_batches=False,
-                                                         deterministic=True):
-            batch_sizes.append(len(X))
+        batch_sizes = [
+            len(X)
+            for X, y, _, _ in solubility_dataset.iterbatches(
+                3, epochs=2, pad_batches=False, deterministic=True
+            )
+        ]
         self.assertEqual([3, 3, 3, 1, 3, 3, 3, 1], batch_sizes)
 
     @pytest.mark.torch

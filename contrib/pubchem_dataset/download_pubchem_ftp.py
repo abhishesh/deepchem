@@ -27,9 +27,9 @@ def main():
         i = i + 1
         continue
 
-    with open(local_filename, 'wb') as file :
-        ftp.retrbinary('RETR ' + filename, file.write)
-        i = i + 1
+    with open(local_filename, 'wb') as file:
+      ftp.retrbinary(f'RETR {filename}', file.write)
+      i = i + 1
 
     # Next download all Bioassays
     ftp.cwd("/pubchem/Bioassay/CSV/Data")
@@ -51,7 +51,7 @@ def main():
         continue
 
       with open(local_filename, 'wb') as file:
-        ftp.retrbinary('RETR ' + filename, file.write)
+        ftp.retrbinary(f'RETR {filename}', file.write)
         i = i + 1
 
       print("Processed file {0} of {1}".format(i, len(filelist)))

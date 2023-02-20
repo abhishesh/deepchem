@@ -152,9 +152,7 @@ class ConvMol(object):
             rng = np.array(range(num_atoms))
             indices = rng[deg_array == deg]
 
-            # Extract and save adjacency list for the current degree
-            to_cat = [self.canon_adj_list[i] for i in indices]
-            if len(to_cat) > 0:
+            if to_cat := [self.canon_adj_list[i] for i in indices]:
                 adj_list = np.vstack([self.canon_adj_list[i] for i in indices])
                 self.deg_adj_lists[deg - self.min_deg] = adj_list.astype(
                     np.int32)
@@ -343,10 +341,9 @@ class ConvMol(object):
                             # Increment once row is done
                             row += 1
 
-        # Get the final aggregated molecule
-        concat_mol = MultiConvMol(all_atoms, deg_adj_lists, deg_slice,
-                                  membership, num_mols)
-        return concat_mol
+        return MultiConvMol(
+            all_atoms, deg_adj_lists, deg_slice, membership, num_mols
+        )
 
 
 class MultiConvMol(object):

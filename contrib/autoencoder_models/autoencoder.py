@@ -50,7 +50,7 @@ class TensorflowMoleculeEncoder(Model):
       self.model = m
     else:
       # TODO (LESWING) Lazy Load
-      raise ValueError("Model file %s doesn't exist" % weights_file)
+      raise ValueError(f"Model file {weights_file} doesn't exist")
 
   @staticmethod
   def zinc_encoder():
@@ -67,7 +67,7 @@ class TensorflowMoleculeEncoder(Model):
     if not os.path.exists(weights_file):
       download_url("http://karlleswing.com/misc/keras-molecule/model.h5",
                    current_dir)
-      mv_cmd = "mv model.h5 %s" % weights_file
+      mv_cmd = f"mv model.h5 {weights_file}"
       call(mv_cmd.split())
     return TensorflowMoleculeEncoder(
         model_dir=current_dir, weights_file=weights_filename)
@@ -76,8 +76,7 @@ class TensorflowMoleculeEncoder(Model):
     raise ValueError("Only can read in pre-trained models")
 
   def predict_on_batch(self, X):
-    x_latent = self.model.encoder.predict(X)
-    return x_latent
+    return self.model.encoder.predict(X)
 
 
 class TensorflowMoleculeDecoder(Model):
@@ -119,7 +118,7 @@ class TensorflowMoleculeDecoder(Model):
       self.model = m
     else:
       # TODO (LESWING) Lazy Load
-      raise ValueError("Model file %s doesn't exist" % weights_file)
+      raise ValueError(f"Model file {weights_file} doesn't exist")
 
   def fit(self, dataset, nb_epoch=10, batch_size=50, **kwargs):
     raise ValueError("Only can read in pre-trained models")
@@ -139,11 +138,10 @@ class TensorflowMoleculeDecoder(Model):
     if not os.path.exists(weights_file):
       download_url("http://karlleswing.com/misc/keras-molecule/model.h5",
                    current_dir)
-      mv_cmd = "mv model.h5 %s" % weights_file
+      mv_cmd = f"mv model.h5 {weights_file}"
       call(mv_cmd.split())
     return TensorflowMoleculeDecoder(
         model_dir=current_dir, weights_file=weights_filename)
 
   def predict_on_batch(self, X):
-    x_latent = self.model.decoder.predict(X)
-    return x_latent
+    return self.model.decoder.predict(X)

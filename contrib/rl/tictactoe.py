@@ -72,10 +72,9 @@ def eval_tic_tac_toe(value_weight,
       a3c.restore()
     except:
       print("unable to restore")
-      pass
     a3c.fit(rollouts)
     rewards = []
-    for i in range(games):
+    for _ in range(games):
       env.reset()
       reward = -float('inf')
       while not env._terminated:

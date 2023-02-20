@@ -155,7 +155,6 @@ class ProgressiveJointRegressor(TensorflowMultiTaskRegressor):
   def add_adapter(self, all_layers, task, layer_num):
     """Add an adapter connection for given task/layer combo"""
     i = layer_num
-    prev_layers = []
     # Handle output layer
     if i < len(self.layer_sizes):
       layer_sizes = self.layer_sizes
@@ -169,9 +168,7 @@ class ProgressiveJointRegressor(TensorflowMultiTaskRegressor):
       bias_init_const = self.bias_init_consts[-1]
     else:
       raise ValueError("layer_num too large for add_adapter.")
-    # Iterate over all previous tasks.
-    for prev_task in range(task):
-      prev_layers.append(all_layers[(i - 1, prev_task)])
+    prev_layers = [all_layers[(i - 1, prev_task)] for prev_task in range(task)]
     # prev_layers is a list with elements of size
     # (batch_size, layer_sizes[i-1])
     prev_layer = tf.concat(axis=1, values=prev_layers)
@@ -302,8 +299,7 @@ class ProgressiveJointRegressor(TensorflowMultiTaskRegressor):
       with TensorflowGraph.shared_name_scope('costs', graph, name_scopes):
         for task in range(self.n_tasks):
           task_str = str(task).zfill(len(str(self.n_tasks)))
-          with TensorflowGraph.shared_name_scope('cost_{}'.format(task_str),
-                                                 graph, name_scopes):
+          with TensorflowGraph.shared_name_scope(f'cost_{task_str}', graph, name_scopes):
             with tf.name_scope('weighted'):
               weighted_cost = self.cost(output[task], labels[task],
                                         weights[task])
@@ -342,8 +338,7 @@ class ProgressiveJointRegressor(TensorflowMultiTaskRegressor):
       w_b: np.ndarray of shape (batch_size, n_tasks)
       ids_b: List of length (batch_size) with datapoint identifiers.
     """
-    orig_dict = {}
-    orig_dict["mol_features"] = X_b
+    orig_dict = {"mol_features": X_b}
     for task in range(self.n_tasks):
       if y_b is not None:
         orig_dict["labels_%d" % task] = y_b[:, task]
@@ -399,13 +394,12 @@ class ProgressiveJointRegressor(TensorflowMultiTaskRegressor):
           batch_outputs = batch_outputs.transpose((1, 0, 2))
         elif batch_outputs.ndim == 2:
           batch_outputs = batch_outputs.transpose((1, 0))
-        # Handle edge case when batch-size is 1.
         elif batch_outputs.ndim == 1:
           n_samples = len(X)
           batch_outputs = batch_outputs.reshape((n_samples, n_tasks))
         else:
-          raise ValueError('Unrecognized rank combination for output: %s' %
-                           (batch_outputs.shape))
+          raise ValueError(
+              f'Unrecognized rank combination for output: {batch_outputs.shape}')
         # Prune away any padding that was added
         batch_outputs = batch_outputs[:n_samples]
         outputs.append(batch_outputs)

@@ -65,9 +65,7 @@ def get_atom_type(atom):
     return (19)
   if elem == 35:
     return (20)
-  if elem == 53:
-    return (21)
-  return (22)
+  return 21 if elem == 53 else 22
 
 
 def get_atom_adj_matrices(mol,
@@ -90,7 +88,7 @@ def get_atom_adj_matrices(mol,
     atom_matrix[:, atom_matrix.shape[1] - 1] = 1
 
   atom_arrays = []
-  for a_idx in range(0, mol.GetNumAtoms()):
+  for a_idx in range(mol.GetNumAtoms()):
     atom = mol.GetAtomWithIdx(a_idx)
     if graph_conv_features:
       atom_arrays.append(atom_features(atom))

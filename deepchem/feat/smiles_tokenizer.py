@@ -86,13 +86,11 @@ class SmilesTokenizer(BertTokenizer):
         super().__init__(vocab_file, **kwargs)
 
         if not os.path.isfile(vocab_file):
-            raise ValueError(
-                "Can't find a vocab file at path '{}'.".format(vocab_file))
+            raise ValueError(f"Can't find a vocab file at path '{vocab_file}'.")
         self.vocab = load_vocab(vocab_file)
-        self.highest_unused_index = max([
-            i for i, v in enumerate(self.vocab.keys())
-            if v.startswith("[unused")
-        ])
+        self.highest_unused_index = max(
+            i for i, v in enumerate(self.vocab.keys()) if v.startswith("[unused")
+        )
         self.ids_to_tokens = collections.OrderedDict([
             (ids, tok) for tok, ids in self.vocab.items()
         ])
@@ -116,11 +114,7 @@ class SmilesTokenizer(BertTokenizer):
         """
 
         max_len_single_sentence = max_seq_length - 2
-        split_tokens = [
-            token for token in self.basic_tokenizer.tokenize(text)
-            [:max_len_single_sentence]
-        ]
-        return split_tokens
+        return list(self.basic_tokenizer.tokenize(text)[:max_len_single_sentence])
 
     def _convert_token_to_id(self, token: str):
         """Converts a token (str/unicode) in an id using the vocab.
@@ -228,16 +222,13 @@ class SmilesTokenizer(BertTokenizer):
         """
         padding = [self.pad_token_id] * (length - len(token_ids))
 
-        if right:
-            return token_ids + padding
-        else:
-            return padding + token_ids
+        return token_ids + padding if right else padding + token_ids
 
     def save_vocabulary(
         self,
         save_directory: str,
         filename_prefix: Optional[str] = None
-    ):  # -> Tuple[str]: doctest issue raised with this return type annotation
+    ):    # -> Tuple[str]: doctest issue raised with this return type annotation
         """Save the tokenizer vocabulary to a file.
 
         Parameters
@@ -264,9 +255,8 @@ class SmilesTokenizer(BertTokenizer):
                                              key=lambda kv: kv[1]):
                 if index != token_index:
                     logger.warning(
-                        "Saving vocabulary to {}: vocabulary indices are not consecutive."
-                        " Please check that the vocabulary is not corrupted!".
-                        format(vocab_file))
+                        f"Saving vocabulary to {vocab_file}: vocabulary indices are not consecutive. Please check that the vocabulary is not corrupted!"
+                    )
                     index = token_index
                 writer.write(token + "\n")
                 index += 1
@@ -307,8 +297,7 @@ class BasicSmilesTokenizer(object):
     def tokenize(self, text):
         """Basic Tokenization of a SMILES.
         """
-        tokens = [token for token in self.regex.findall(text)]
-        return tokens
+        return list(self.regex.findall(text))
 
 
 def load_vocab(vocab_file):

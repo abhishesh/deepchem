@@ -182,13 +182,13 @@ class SingleTaskGraphConvolution(object):
         y_train: numpy array of labels 
         """
 
-        train_inds = range(0, len(train_features))
+        train_inds = range(len(train_features))
         if shuffle_train_inds:
             random.shuffle(train_inds)
 
-        for b in range(0, len(train_inds)/batch_size):
+        for b in range(len(train_inds)/batch_size):
             batch_inds = [train_inds[idx] for idx in range(b*batch_size, (b+1)*batch_size)]
-            
+
             train_x_batch = np.concatenate([np.expand_dims(train_features[idx]["x"], 0) for idx in batch_inds], axis=0)
             train_g_batch = np.concatenate([np.expand_dims(train_features[idx]["g"], 0) for idx in batch_inds], axis=0)
 
@@ -198,20 +198,20 @@ class SingleTaskGraphConvolution(object):
 
             self.net.train()
             self.net.zero_grad()
-            
+
             self.input_x.resize_as_(xb).copy_(xb)
             self.input_g.resize_as_(gb).copy_(gb)
             self.label.resize_as_(yb).copy_(yb)
-            
+
             input_xv = Variable(self.input_x)
             input_gv = Variable(self.input_g)
             label_v = Variable(self.label)
 
             output = self.net(input_gv, input_xv)
-            
+
             err = self.criterion(output, label_v)
             err.backward()
-            
+
             self.optimizer.step()
 
     def evaluate(self, train_features,
@@ -223,29 +223,29 @@ class SingleTaskGraphConvolution(object):
         
         self.net.eval()
         print("TRAIN:")
-        
+
         o = []
         l = []
 
-        train_inds = range(0, len(train_features))
+        train_inds = range(len(train_features))
 
-        for b in range(0, len(train_features)/batch_size):
+        for b in range(len(train_features)/batch_size):
             batch_inds = [train_inds[idx] for idx in range(b*batch_size, (b+1)*batch_size)]
-            
+
             train_x_batch = np.concatenate([np.expand_dims(train_features[idx]["x"], 0) for idx in batch_inds], axis=0)
             train_g_batch = np.concatenate([np.expand_dims(train_features[idx]["g"], 0) for idx in batch_inds], axis=0)
 
             xb = torch.from_numpy(train_x_batch.astype(np.float32)).cuda()
             gb = torch.from_numpy(train_g_batch.astype(np.float32)).cuda()
-            
+
             self.input_x.resize_as_(xb).copy_(xb)
             self.input_g.resize_as_(gb).copy_(gb)
-            
+
             input_xv = Variable(self.input_x)
             input_gv = Variable(self.input_g)
 
             output = self.net(input_gv, input_xv)
-            
+
             if transformer is not None:
                 o.append(transformer.inverse_transform(output.data.cpu().numpy().reshape((-1,1))).flatten())
                 l.append(transformer.inverse_transform(y_train[batch_inds].reshape((-1,1))).flatten())
@@ -259,30 +259,30 @@ class SingleTaskGraphConvolution(object):
         print(np.sqrt(np.mean(np.square(l-o))))
         print("ROC AUC:")
         print(roc_auc_score(l, o))
-        
+
         o = []
         l = []
 
         print("TEST:")
-        test_inds = range(0, len(test_features))
+        test_inds = range(len(test_features))
 
-        for b in range(0, len(test_features)/batch_size):
+        for b in range(len(test_features)/batch_size):
             batch_inds = [test_inds[idx] for idx in range(b*batch_size, (b+1)*batch_size)]
-            
+
             test_x_batch = np.concatenate([np.expand_dims(test_features[idx]["x"], 0) for idx in batch_inds], axis=0)
             test_g_batch = np.concatenate([np.expand_dims(test_features[idx]["g"], 0) for idx in batch_inds], axis=0)
 
             xb = torch.from_numpy(test_x_batch.astype(np.float32)).cuda()
             gb = torch.from_numpy(test_g_batch.astype(np.float32)).cuda()
-            
+
             self.input_x.resize_as_(xb).copy_(xb)
             self.input_g.resize_as_(gb).copy_(gb)
-            
+
             input_xv = Variable(self.input_x)
             input_gv = Variable(self.input_g)
 
             output = self.net(input_gv, input_xv)
-            
+
             if transformer is not None:
                 o.append(transformer.inverse_transform(output.data.cpu().numpy().reshape((-1,1))).flatten())
                 l.append(transformer.inverse_transform(y_test[batch_inds].reshape((-1,1))).flatten())
@@ -335,7 +335,7 @@ class MultiTaskGraphConvolution(object):
 
     def multitask_loss(self, output, label_v):
         losses = []
-        
+
         for task in range(self.n_tasks):
             #print("tasK: %d" %task)
             scores = output[:,task].contiguous().view((-1,1))
@@ -352,19 +352,18 @@ class MultiTaskGraphConvolution(object):
             losses.append(task_loss)
             #print("task_loss")
             #print(task_loss.size())
-        loss = torch.cat(losses).mean()
-        return(loss)
+        return torch.cat(losses).mean()
 
 
     def train_epoch(self, train_features, y_train, batch_size=32,
                     shuffle_train_inds=True):
-        train_inds = range(0, len(train_features))
+        train_inds = range(len(train_features))
         if shuffle_train_inds:
             random.shuffle(train_inds)
 
-        for b in range(0, len(train_inds)/batch_size):
+        for b in range(len(train_inds)/batch_size):
             batch_inds = [train_inds[idx] for idx in range(b*batch_size, (b+1)*batch_size)]
-            
+
             train_x_batch = np.concatenate([np.expand_dims(train_features[idx]["x"], 0) for idx in batch_inds], axis=0)
             train_g_batch = np.concatenate([np.expand_dims(train_features[idx]["g"], 0) for idx in batch_inds], axis=0)
 
@@ -374,20 +373,20 @@ class MultiTaskGraphConvolution(object):
 
             self.net.train()
             self.net.zero_grad()
-            
+
             self.input_x.resize_as_(xb).copy_(xb)
             self.input_g.resize_as_(gb).copy_(gb)
             self.label.resize_as_(yb).copy_(yb)
-            
+
             input_xv = Variable(self.input_x)
             input_gv = Variable(self.input_g)
             label_v = Variable(self.label)
 
             output = self.net(input_gv, input_xv)
-            
+
             err = self.multitask_loss(output, label_v)
             err.backward()
-            
+
             self.optimizer.step()
 
     def evaluate(self, train_features,
@@ -399,29 +398,29 @@ class MultiTaskGraphConvolution(object):
         
         self.net.eval()
         print("TRAIN:")
-        
+
         o = []
         l = []
 
-        train_inds = range(0, len(train_features))
+        train_inds = range(len(train_features))
 
-        for b in range(0, len(train_features)/batch_size):
+        for b in range(len(train_features)/batch_size):
             batch_inds = [train_inds[idx] for idx in range(b*batch_size, (b+1)*batch_size)]
-            
+
             train_x_batch = np.concatenate([np.expand_dims(train_features[idx]["x"], 0) for idx in batch_inds], axis=0)
             train_g_batch = np.concatenate([np.expand_dims(train_features[idx]["g"], 0) for idx in batch_inds], axis=0)
 
             xb = torch.from_numpy(train_x_batch.astype(np.float32)).cuda()
             gb = torch.from_numpy(train_g_batch.astype(np.float32)).cuda()
-            
+
             self.input_x.resize_as_(xb).copy_(xb)
             self.input_g.resize_as_(gb).copy_(gb)
-            
+
             input_xv = Variable(self.input_x)
             input_gv = Variable(self.input_g)
 
             output = self.net(input_gv, input_xv)
-            
+
             if transformer is not None:
                 o.append(transformer.inverse_transform(output.data.cpu().numpy().reshape((-1,1))).flatten())
                 l.append(transformer.inverse_transform(y_train[batch_inds].reshape((-1,1))).flatten())
@@ -435,30 +434,30 @@ class MultiTaskGraphConvolution(object):
         print(np.sqrt(np.mean(np.square(l-o))))
         print("ROC AUC:")
         print(roc_auc_score(l, o))
-        
+
         o = []
         l = []
 
         print("TEST:")
-        test_inds = range(0, len(test_features))
+        test_inds = range(len(test_features))
 
-        for b in range(0, len(test_features)/batch_size):
+        for b in range(len(test_features)/batch_size):
             batch_inds = [test_inds[idx] for idx in range(b*batch_size, (b+1)*batch_size)]
-            
+
             test_x_batch = np.concatenate([np.expand_dims(test_features[idx]["x"], 0) for idx in batch_inds], axis=0)
             test_g_batch = np.concatenate([np.expand_dims(test_features[idx]["g"], 0) for idx in batch_inds], axis=0)
 
             xb = torch.from_numpy(test_x_batch.astype(np.float32)).cuda()
             gb = torch.from_numpy(test_g_batch.astype(np.float32)).cuda()
-            
+
             self.input_x.resize_as_(xb).copy_(xb)
             self.input_g.resize_as_(gb).copy_(gb)
-            
+
             input_xv = Variable(self.input_x)
             input_gv = Variable(self.input_g)
 
             output = self.net(input_gv, input_xv)
-            
+
             if transformer is not None:
                 o.append(transformer.inverse_transform(output.data.cpu().numpy().reshape((-1,1))).flatten())
                 l.append(transformer.inverse_transform(y_test[batch_inds].reshape((-1,1))).flatten())

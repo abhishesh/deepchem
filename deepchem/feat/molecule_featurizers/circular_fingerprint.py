@@ -136,28 +136,27 @@ class CircularFingerprint(MolecularFeaturizer):
                     smiles = Chem.MolToSmiles(frag)
                     fp_smiles[fragment_id] = {'smiles': smiles, 'count': count}
                 fp = fp_smiles
+        elif self.is_counts_based:
+            fp_sparse = rdMolDescriptors.GetHashedMorganFingerprint(
+                datapoint,
+                self.radius,
+                nBits=self.size,
+                useChirality=self.chiral,
+                useBondTypes=self.bonds,
+                useFeatures=self.features)
+            fp = np.zeros(
+                (self.size,), dtype=float
+            )  # initialise numpy array of zeros (shape: (required size,))
+            DataStructs.ConvertToNumpyArray(fp_sparse, fp)
         else:
-            if self.is_counts_based:
-                fp_sparse = rdMolDescriptors.GetHashedMorganFingerprint(
-                    datapoint,
-                    self.radius,
-                    nBits=self.size,
-                    useChirality=self.chiral,
-                    useBondTypes=self.bonds,
-                    useFeatures=self.features)
-                fp = np.zeros(
-                    (self.size,), dtype=float
-                )  # initialise numpy array of zeros (shape: (required size,))
-                DataStructs.ConvertToNumpyArray(fp_sparse, fp)
-            else:
-                fp = rdMolDescriptors.GetMorganFingerprintAsBitVect(
-                    datapoint,
-                    self.radius,
-                    nBits=self.size,
-                    useChirality=self.chiral,
-                    useBondTypes=self.bonds,
-                    useFeatures=self.features)
-                fp = np.asarray(fp, dtype=float)
+            fp = rdMolDescriptors.GetMorganFingerprintAsBitVect(
+                datapoint,
+                self.radius,
+                nBits=self.size,
+                useChirality=self.chiral,
+                useBondTypes=self.bonds,
+                useFeatures=self.features)
+            fp = np.asarray(fp, dtype=float)
         return fp
 
     def __hash__(self):
@@ -165,12 +164,14 @@ class CircularFingerprint(MolecularFeaturizer):
                      self.features, self.sparse, self.smiles))
 
     def __eq__(self, other):
-        if not isinstance(self, other.__class__):
-            return False
-        return self.radius == other.radius and \
-               self.size == other.size and \
-               self.chiral == other.chiral and \
-               self.bonds == other.bonds and \
-               self.features == other.features and \
-               self.sparse == other.sparse and \
-               self.smiles == other.smiles
+        return (
+            self.radius == other.radius
+            and self.size == other.size
+            and self.chiral == other.chiral
+            and self.bonds == other.bonds
+            and self.features == other.features
+            and self.sparse == other.sparse
+            and self.smiles == other.smiles
+            if isinstance(self, other.__class__)
+            else False
+        )

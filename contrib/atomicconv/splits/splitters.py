@@ -28,18 +28,14 @@ def generate_scaffold(smiles, include_chirality=False):
   """Compute the Bemis-Murcko scaffold for a SMILES string."""
   mol = Chem.MolFromSmiles(smiles)
   engine = ScaffoldGenerator(include_chirality=include_chirality)
-  scaffold = engine.get_scaffold(mol)
-  return scaffold
+  return engine.get_scaffold(mol)
 
 
 def randomize_arrays(array_list):
   # assumes that every array is of the same dimension
   num_rows = array_list[0].shape[0]
   perm = np.random.permutation(num_rows)
-  permuted_arrays = []
-  for array in array_list:
-    permuted_arrays.append(array[perm])
-  return permuted_arrays
+  return [array[perm] for array in array_list]
 
 
 class Splitter(object):
@@ -483,7 +479,7 @@ class SingletaskStratifiedSplitter(Splitter):
     np.testing.assert_equal(10 * frac_train + 10 * frac_valid + 10 * frac_test,
                             10.)
 
-    if not seed is None:
+    if seed is not None:
       np.random.seed(seed)
 
     y_s = dataset.y[:, self.task_number]
@@ -530,7 +526,7 @@ class MolecularWeightSplitter(Splitter):
     """
 
     np.testing.assert_almost_equal(frac_train + frac_valid + frac_test, 1.)
-    if not seed is None:
+    if seed is not None:
       np.random.seed(seed)
 
     mws = []
@@ -566,7 +562,7 @@ class RandomSplitter(Splitter):
     Splits internal compounds randomly into train/validation/test.
     """
     np.testing.assert_almost_equal(frac_train + frac_valid + frac_test, 1.)
-    if not seed is None:
+    if seed is not None:
       np.random.seed(seed)
     num_datapoints = len(dataset)
     train_cutoff = int(frac_train * num_datapoints)
@@ -630,17 +626,13 @@ class IndiceSplitter(Splitter):
     """
     num_datapoints = len(dataset)
     indices = np.arange(num_datapoints).tolist()
-    train_indices = []
     if self.valid_indices is None:
       self.valid_indices = []
     if self.test_indices is None:
       self.test_indices = []
     valid_test = self.valid_indices
     valid_test.extend(self.test_indices)
-    for indice in indices:
-      if not indice in valid_test:
-        train_indices.append(indice)
-
+    train_indices = [indice for indice in indices if indice not in valid_test]
     return (train_indices, self.valid_indices, self.test_indices)
 
 
@@ -651,8 +643,7 @@ def ClusterFps(fps, cutoff=0.2):
   for i in range(1, nfps):
     sims = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
     dists.extend([1 - x for x in sims])
-  cs = Butina.ClusterData(dists, nfps, cutoff, isDistData=True)
-  return cs
+  return Butina.ClusterData(dists, nfps, cutoff, isDistData=True)
 
 
 class ButinaSplitter(Splitter):
@@ -683,9 +674,7 @@ class ButinaSplitter(Splitter):
     whereas setting a large cutoff value will generate larger, coarser clusters of low similarity.
     """
     print("Performing butina clustering with cutoff of", cutoff)
-    mols = []
-    for ind, smiles in enumerate(dataset.ids):
-      mols.append(Chem.MolFromSmiles(smiles))
+    mols = [Chem.MolFromSmiles(smiles) for smiles in dataset.ids]
     n_mols = len(mols)
     fps = [AllChem.GetMorganFingerprintAsBitVect(x, 2, 1024) for x in mols]
 

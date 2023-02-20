@@ -128,7 +128,7 @@ class TestAtomicCoordinates(unittest.TestCase):
         featurizer = NeighborListAtomicCoordinates(neighbor_cutoff=cutoff,
                                                    periodic_box_size=box_size)
         neighborlist = featurizer._featurize(self.mol)[1]
-        expected_neighbors = [set() for i in range(N)]
+        expected_neighbors = [set() for _ in range(N)]
         for i in range(N):
             for j in range(i):
                 delta = coords[i] - coords[j]

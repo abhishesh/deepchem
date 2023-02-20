@@ -46,19 +46,19 @@ def get_cells(coords, neighbor_cutoff):
   x_current, y_current, z_current = x_min, y_min, z_min
   # min == max if molecule is planar in some direction
   # we should still create a bin
-  if not x_min == x_max:
+  if x_min != x_max:
     while x_current < x_max:
       x_bins.append((x_current, x_current + neighbor_cutoff))
       x_current += neighbor_cutoff
   else:
     x_bins.append((x_current, x_current + neighbor_cutoff))
-  if not y_min == y_max:
+  if y_min != y_max:
     while y_current < y_max:
       y_bins.append((y_current, y_current + neighbor_cutoff))
       y_current += neighbor_cutoff
   else:
     y_bins.append((y_current, y_current + neighbor_cutoff))
-  if not z_min == z_max:
+  if z_min != z_max:
     while z_current < z_max:
       z_bins.append((z_current, z_current + neighbor_cutoff))
       z_current += neighbor_cutoff
@@ -152,9 +152,11 @@ def compute_neighbor_cell_map(N_x, N_y, N_z):
         # Note neighbors contains self!
         for x_offset in offsets:
           for y_offset in offsets:
-            for z_offset in offsets:
-              neighbors.append(((x_ind + x_offset) % N_x, (y_ind + y_offset) %
-                                N_y, (z_ind + z_offset) % N_z))
+            neighbors.extend((
+                (x_ind + x_offset) % N_x,
+                (y_ind + y_offset) % N_y,
+                (z_ind + z_offset) % N_z,
+            ) for z_offset in offsets)
         neighbor_cell_map[(x_ind, y_ind, z_ind)] = neighbors
   return neighbor_cell_map
 
@@ -262,45 +264,29 @@ class NeighborListAtomicCoordinates(Featurizer):
     # Accept as neighbors only those within threshold. This computation should be
     # O(Nm), where m is the number of atoms within a set of neighboring-cells.
     neighbor_list = {}
-    if self.boxsize is not None:
-      for atom in range(N):
-        cell = atom_to_cell[atom]
-        neighbor_cells = neighbor_cell_map[cell]
-        neighbor_list[atom] = set()
-        for neighbor_cell in neighbor_cells:
-          atoms_in_cell = cell_to_atoms[neighbor_cell]
-          for neighbor_atom in atoms_in_cell:
-            if neighbor_atom == atom:
-              continue
+    for atom in range(N):
+      cell = atom_to_cell[atom]
+      neighbor_cells = neighbor_cell_map[cell]
+      neighbor_list[atom] = set()
+      for neighbor_cell in neighbor_cells:
+        atoms_in_cell = cell_to_atoms[neighbor_cell]
+        for neighbor_atom in atoms_in_cell:
+          if neighbor_atom == atom:
+            continue
+          if self.boxsize is not None:
             dist = np.linalg.norm(coords[atom] - coords[neighbor_atom])
             dist = dist - self.boxsize * np.round(dist / self.boxsize)
-            if dist < self.neighbor_cutoff:
-              neighbor_list[atom].add((neighbor_atom, dist))
-        # Sort neighbors by distance
-        closest_neighbors = sorted(
-            list(neighbor_list[atom]), key=lambda elt: elt[1])
-        closest_neighbors = [nbr for (nbr, dist) in closest_neighbors]
-        # Pick up to max_num_neighbors
-        closest_neighbors = closest_neighbors[:self.max_num_neighbors]
-        neighbor_list[atom] = closest_neighbors
-    else:
-      for atom in range(N):
-        cell = atom_to_cell[atom]
-        neighbor_cells = neighbor_cell_map[cell]
-        neighbor_list[atom] = set()
-        for neighbor_cell in neighbor_cells:
-          atoms_in_cell = cell_to_atoms[neighbor_cell]
-          for neighbor_atom in atoms_in_cell:
-            if neighbor_atom == atom:
-              continue
+          else:
             dist = np.linalg.norm(coords[atom] - coords[neighbor_atom])
-            if dist < self.neighbor_cutoff:
-              neighbor_list[atom].add((neighbor_atom, dist))
-        closest_neighbors = sorted(
-            list(neighbor_list[atom]), key=lambda elt: elt[1])
-        closest_neighbors = [nbr for (nbr, dist) in closest_neighbors]
-        closest_neighbors = closest_neighbors[:self.max_num_neighbors]
-        neighbor_list[atom] = closest_neighbors
+          if dist < self.neighbor_cutoff:
+            neighbor_list[atom].add((neighbor_atom, dist))
+      # Sort neighbors by distance
+      closest_neighbors = sorted(
+          list(neighbor_list[atom]), key=lambda elt: elt[1])
+      closest_neighbors = [nbr for (nbr, dist) in closest_neighbors]
+      # Pick up to max_num_neighbors
+      closest_neighbors = closest_neighbors[:self.max_num_neighbors]
+      neighbor_list[atom] = closest_neighbors
     Z = pad_array(
         np.array([atom.GetAtomicNum()
                   for atom in mol.GetAtoms()]), self.max_num_atoms)

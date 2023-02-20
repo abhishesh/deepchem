@@ -27,12 +27,11 @@ def _get_version():
         base = g['__version__']
         if IS_RELEASE:
           return base
-        else:
-          # nightly version : .devYearMonthDayHourMinute
-          if base.endswith('.dev') is False:
-            # Force to add `.dev` if `--release` option isn't passed when building
-            base += '.dev'
-          return base + time.strftime("%Y%m%d%H%M%S")
+        # nightly version : .devYearMonthDayHourMinute
+        if base.endswith('.dev') is False:
+          # Force to add `.dev` if `--release` option isn't passed when building
+          base += '.dev'
+        return base + time.strftime("%Y%m%d%H%M%S")
 
     raise ValueError('`__version__` not defined in `deepchem/__init__.py`')
 

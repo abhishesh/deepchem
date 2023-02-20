@@ -52,9 +52,9 @@ def featurize_contacts_ecfp(
     contacts = np.nonzero((pairwise_distances < cutoff))
     # contacts[0] is the x_coords, that is the frag1 atoms that have
     # nonzero contact.
-    frag1_atoms = set([int(c) for c in contacts[0].tolist()])
+    frag1_atoms = {int(c) for c in contacts[0].tolist()}
     # contacts[1] is the y_coords, the frag2 atoms with nonzero contacts
-    frag2_atoms = set([int(c) for c in contacts[1].tolist()])
+    frag2_atoms = {int(c) for c in contacts[1].tolist()}
 
     frag1_ecfp_dict = compute_all_ecfp(frag1[1],
                                        indices=frag1_atoms,
@@ -212,22 +212,28 @@ class ContactCircularVoxelizer(ComplexFeaturizer):
             frag2_xyz = subtract_centroid(frag2[0], centroid)
             xyzs = [frag1_xyz, frag2_xyz]
             pairwise_features.append(
-                sum([
-                    voxelize(convert_atom_to_voxel,
-                             xyz,
-                             self.box_width,
-                             self.voxel_width,
-                             hash_function=hash_ecfp,
-                             feature_dict=ecfp_dict,
-                             nb_channel=self.size)
+                sum(
+                    voxelize(
+                        convert_atom_to_voxel,
+                        xyz,
+                        self.box_width,
+                        self.voxel_width,
+                        hash_function=hash_ecfp,
+                        feature_dict=ecfp_dict,
+                        nb_channel=self.size,
+                    )
                     for xyz, ecfp_dict in zip(
                         xyzs,
-                        featurize_contacts_ecfp(frag1,
-                                                frag2,
-                                                distances,
-                                                cutoff=self.cutoff,
-                                                ecfp_degree=self.radius))
-                ]))
+                        featurize_contacts_ecfp(
+                            frag1,
+                            frag2,
+                            distances,
+                            cutoff=self.cutoff,
+                            ecfp_degree=self.radius,
+                        ),
+                    )
+                )
+            )
         if self.flatten:
             return np.concatenate(
                 [features.flatten() for features in pairwise_features])
@@ -270,7 +276,7 @@ def featurize_binding_pocket_sybyl(protein_xyz,
     if pairwise_distances is None:
         pairwise_distances = compute_pairwise_distances(protein_xyz, ligand_xyz)
     contacts = np.nonzero((pairwise_distances < cutoff))
-    protein_atoms = set([int(c) for c in contacts[0].tolist()])
+    protein_atoms = {int(c) for c in contacts[0].tolist()}
 
     protein_sybyl_dict = compute_all_sybyl(protein, indices=protein_atoms)
     ligand_sybyl_dict = compute_all_sybyl(ligand)

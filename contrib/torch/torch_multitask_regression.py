@@ -69,7 +69,7 @@ class TorchMultitaskRegression(TorchMultitaskModel):
 
     self.task_W_list = []
     self.task_b_list = []
-    for i in range(self.n_tasks):
+    for _ in range(self.n_tasks):
       W_init = np.random.normal(0, weight_init_stddevs[-1],
                                 (prev_layer_size, 1))
       W_init = torch.cuda.FloatTensor(W_init)
@@ -97,12 +97,12 @@ class TorchMultitaskRegression(TorchMultitaskModel):
     return outputs
 
   def cost(self, logit, label, weight):
-    loss = []
     loss_func = torch.nn.MSELoss()
-    for i in range(logit.size()[0]):
-      loss.append(loss_func(logit[i], label[i]).mul(weight[i]))
-    loss = torch.cat(loss).mean()
-    return loss
+    loss = [
+        loss_func(logit[i], label[i]).mul(weight[i])
+        for i in range(logit.size()[0])
+    ]
+    return torch.cat(loss).mean()
 
   def predict_on_batch(self, X_batch):
     X_batch = torch.autograd.Variable(torch.cuda.FloatTensor(X_batch))

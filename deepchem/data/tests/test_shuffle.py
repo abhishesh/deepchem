@@ -17,8 +17,8 @@ def test_complete_shuffle_one_shard():
     assert shuffled.X.shape == dataset.X.shape
     assert shuffled.y.shape == dataset.y.shape
     assert shuffled.w.shape == dataset.w.shape
-    original_indices = dict((id, i) for i, id in enumerate(dataset.ids))
-    shuffled_indices = dict((id, i) for i, id in enumerate(shuffled.ids))
+    original_indices = {id: i for i, id in enumerate(dataset.ids)}
+    shuffled_indices = {id: i for i, id in enumerate(shuffled.ids)}
     for id in dataset.ids:
         i = original_indices[id]
         j = shuffled_indices[id]
@@ -39,8 +39,8 @@ def test_complete_shuffle_multiple_shard():
     assert shuffled.X.shape == dataset.X.shape
     assert shuffled.y.shape == dataset.y.shape
     assert shuffled.w.shape == dataset.w.shape
-    original_indices = dict((id, i) for i, id in enumerate(dataset.ids))
-    shuffled_indices = dict((id, i) for i, id in enumerate(shuffled.ids))
+    original_indices = {id: i for i, id in enumerate(dataset.ids)}
+    shuffled_indices = {id: i for i, id in enumerate(shuffled.ids)}
     for id in dataset.ids:
         i = original_indices[id]
         j = shuffled_indices[id]
@@ -61,8 +61,8 @@ def test_complete_shuffle_multiple_shard_uneven():
     assert shuffled.X.shape == dataset.X.shape
     assert shuffled.y.shape == dataset.y.shape
     assert shuffled.w.shape == dataset.w.shape
-    original_indices = dict((id, i) for i, id in enumerate(dataset.ids))
-    shuffled_indices = dict((id, i) for i, id in enumerate(shuffled.ids))
+    original_indices = {id: i for i, id in enumerate(dataset.ids)}
+    shuffled_indices = {id: i for i, id in enumerate(shuffled.ids)}
     for id in dataset.ids:
         i = original_indices[id]
         j = shuffled_indices[id]
@@ -102,8 +102,8 @@ def test_complete_shuffle():
     assert X_orig.shape == X_new.shape
     assert y_orig.shape == y_new.shape
     assert w_orig.shape == w_new.shape
-    original_indices = dict((id, i) for i, id in enumerate(dataset.ids))
-    shuffled_indices = dict((id, i) for i, id in enumerate(shuffled.ids))
+    original_indices = {id: i for i, id in enumerate(dataset.ids)}
+    shuffled_indices = {id: i for i, id in enumerate(shuffled.ids)}
     for id in dataset.ids:
         i = original_indices[id]
         j = shuffled_indices[id]

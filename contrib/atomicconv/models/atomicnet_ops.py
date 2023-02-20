@@ -111,12 +111,10 @@ def gather_neighbors(X, nbr_indices, B, N, M, d):
   example_tensors = tf.unstack(X, axis=0)
   example_nbrs = tf.unstack(nbr_indices, axis=0)
   all_nbr_coords = []
-  for example, (example_tensor, example_nbr) in enumerate(
-      zip(example_tensors, example_nbrs)):
+  for example_tensor, example_nbr in zip(example_tensors, example_nbrs):
     nbr_coords = tf.gather(example_tensor, example_nbr)
     all_nbr_coords.append(nbr_coords)
-  neighbors = tf.stack(all_nbr_coords)
-  return neighbors
+  return tf.stack(all_nbr_coords)
 
 
 def DistanceTensor(X, Nbrs, boxsize, B, N, M, d):
@@ -147,7 +145,7 @@ def DistanceTensor(X, Nbrs, boxsize, B, N, M, d):
     for atom, atom_tensor in enumerate(atom_tensors):
       nbrs = gather_neighbors(X, nbr_tensors[atom], B, N, M, d)
       nbrs_tensors = tf.unstack(nbrs, axis=1)
-      for nbr, nbr_tensor in enumerate(nbrs_tensors):
+      for nbr_tensor in nbrs_tensors:
         _D = tf.subtract(nbr_tensor, atom_tensor)
         _D = tf.subtract(_D, boxsize * tf.round(tf.math.divide(_D, boxsize)))
         D.append(_D)
@@ -155,7 +153,7 @@ def DistanceTensor(X, Nbrs, boxsize, B, N, M, d):
     for atom, atom_tensor in enumerate(atom_tensors):
       nbrs = gather_neighbors(X, nbr_tensors[atom], B, N, M, d)
       nbrs_tensors = tf.unstack(nbrs, axis=1)
-      for nbr, nbr_tensor in enumerate(nbrs_tensors):
+      for nbr_tensor in nbrs_tensors:
         _D = tf.subtract(nbr_tensor, atom_tensor)
         D.append(_D)
   D = tf.stack(D)
@@ -235,8 +233,7 @@ def RadialCutoff(R, rc):
   T = 0.5 * (tf.cos(np.pi * R / (rc)) + 1)
   E = tf.zeros_like(T)
   cond = tf.less_equal(R, rc)
-  FC = tf.where(cond, T, E)
-  return FC
+  return tf.where(cond, T, E)
 
 
 ### Atomicnet symmetry function ops ###
@@ -342,8 +339,7 @@ def AtomicConvolutionLayer(X, Nbrs, Nbrs_Z, atom_types, radial_params, boxsize,
 
 def create_symmetry_parameters(radial):
   rp = []
-  for _, r0 in enumerate(radial[0]):
-    for _, r1 in enumerate(radial[1]):
-      for _, r2 in enumerate(radial[2]):
-        rp.append([r0, r1, r2])
+  for r0 in radial[0]:
+    for r1 in radial[1]:
+      rp.extend([r0, r1, r2] for r2 in radial[2])
   return rp

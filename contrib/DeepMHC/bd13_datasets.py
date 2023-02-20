@@ -1,5 +1,6 @@
 """BD2013 dataset loader to be used with DeepMHC."""
 
+
 from __future__ import division
 from __future__ import print_function
 
@@ -23,8 +24,8 @@ TEST_FILES = [
 ]
 
 TEST_URLS = [
-    "http://tools.iedb.org/auto_bench/mhci/weekly/accumulated/" + str(date) +
-    "/predictions" for date in TEST_FILES
+    f"http://tools.iedb.org/auto_bench/mhci/weekly/accumulated/{str(date)}/predictions"
+    for date in TEST_FILES
 ]
 
 logger = logging.getLogger(__name__)
@@ -37,15 +38,13 @@ aa_charset = [
 
 def to_one_hot_array(sequence):
   """Converts the sequence to one-hot-array."""
-  one_hot_array = list()
-  for letter in sequence:
-    one_hot_array.append([letter == i for i in aa_charset])
+  one_hot_array = [[letter == i for i in aa_charset] for letter in sequence]
   return np.asarray(one_hot_array, dtype=np.int32)
 
 
 def featurize(sequences, pad_length=13):
   """One-hot encoding for sequences with padding."""
-  features = list()
+  features = []
   for sequence in sequences:
     one_hot_seq = to_one_hot_array(sequence)
     num_to_pad = pad_length - len(sequence)
@@ -59,8 +58,7 @@ def featurize(sequences, pad_length=13):
                         (0, 0)],
           mode='constant')
     features.append(one_hot_seq)
-  features = np.asarray(features)
-  return features
+  return np.asarray(features)
 
 
 def load_bd2013_human(mhc_allele="HLA-A*02:01",
@@ -90,10 +88,10 @@ def load_bd2013_human(mhc_allele="HLA-A*02:01",
     dc.utils.unzip_file(file=train_file, dest_dir=data_dir)
 
   # Parsing training data
-  train_labels = list()
-  train_sequences = list()
+  train_labels = []
+  train_sequences = []
   with open(os.path.join(data_dir, FILE_NAME), "r") as f:
-    for line in f.readlines():
+    for line in f:
       elements = line.strip().split("\t")
       # Pick only sequences from humans, belong to specific MHC allele and having given seq_len
       if elements[0] == "human" and elements[1] == mhc_allele and int(
@@ -102,19 +100,19 @@ def load_bd2013_human(mhc_allele="HLA-A*02:01",
         train_labels.append(float(elements[-1]))
 
   # Test Files loading
-  test_labels = list()
-  test_sequences = list()
-  test_check_file = os.path.join(data_dir, TEST_FILES[0] + '_predictions.tsv')
+  test_labels = []
+  test_sequences = []
+  test_check_file = os.path.join(data_dir, f'{TEST_FILES[0]}_predictions.tsv')
   if not os.path.exists(test_check_file):
     for index, filename in enumerate(TEST_FILES):
       test_url = TEST_URLS[index]
-      test_filename = filename + '_predictions.tsv'
+      test_filename = f'{filename}_predictions.tsv'
       dc.utils.download_url(url=test_url, dest_dir=data_dir, name=test_filename)
 
   for filename in TEST_FILES:
-    test_filename = os.path.join(data_dir, filename + '_predictions.tsv')
+    test_filename = os.path.join(data_dir, f'{filename}_predictions.tsv')
     with open(test_filename, 'r') as f:
-      for line in f.readlines():
+      for line in f:
         elements = line.strip().split("\t")
         if len(elements) == 1:
           continue
