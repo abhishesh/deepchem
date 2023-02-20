@@ -32,19 +32,26 @@ def load_pdbbind_labels(labels_file):
     for line in f:
       if line.startswith("#"):
         continue
+      splitline = line.split()
+      if len(splitline) == 8:
+        contents.append(splitline)
       else:
-        splitline = line.split()
-        if len(splitline) == 8:
-          contents.append(splitline)
-        else:
-          print("Incorrect data format")
-          print(splitline)
+        print("Incorrect data format")
+        print(splitline)
 
-  contents_df = pd.DataFrame(
+  return pd.DataFrame(
       contents,
-      columns=("PDB code", "resolution", "release year", "-logKd/Ki", "Kd/Ki",
-               "ignore-this-field", "reference", "ligand name"))
-  return contents_df
+      columns=(
+          "PDB code",
+          "resolution",
+          "release year",
+          "-logKd/Ki",
+          "Kd/Ki",
+          "ignore-this-field",
+          "reference",
+          "ligand name",
+      ),
+  )
 
 
 def compute_pdbbind_coordinate_features(complex_featurizer, pdb_subdir,
@@ -67,11 +74,10 @@ def compute_pdbbind_coordinate_features(complex_featurizer, pdb_subdir,
 
   """
 
-  protein_file = os.path.join(pdb_subdir, "%s_pocket.pdb" % pdb_code)
-  ligand_file = os.path.join(pdb_subdir, "%s_ligand.pdb" % pdb_code)
-  feature = complex_featurizer._featurize_complex(
+  protein_file = os.path.join(pdb_subdir, f"{pdb_code}_pocket.pdb")
+  ligand_file = os.path.join(pdb_subdir, f"{pdb_code}_ligand.pdb")
+  return complex_featurizer._featurize_complex(
       str(ligand_file), str(protein_file))
-  return feature
 
 
 def load_pdbbind_fragment_coordinates(frag1_num_atoms,
@@ -116,9 +122,8 @@ def load_pdbbind_fragment_coordinates(frag1_num_atoms,
 
   # Create some directories for analysis
   # The base_dir holds the results of all analysis
-  if not reload:
-    if os.path.exists(base_dir):
-      shutil.rmtree(base_dir)
+  if not reload and os.path.exists(base_dir):
+    shutil.rmtree(base_dir)
   if not os.path.exists(base_dir):
     os.makedirs(base_dir)
   current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -144,7 +149,7 @@ def load_pdbbind_fragment_coordinates(frag1_num_atoms,
   #Dataset can be reshard: dataset = dataset.reshard(48) for example
   def shard_generator():
     for ind, pdb_code in enumerate(ids):
-      print("Processing %s" % str(pdb_code))
+      print(f"Processing {str(pdb_code)}")
       pdb_subdir = os.path.join(pdbbind_dir, pdb_code)
       computed_feature = compute_pdbbind_coordinate_features(
           featurizer, pdb_subdir, pdb_code)

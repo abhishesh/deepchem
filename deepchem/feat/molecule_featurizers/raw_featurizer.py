@@ -52,7 +52,4 @@ class RawFeaturizer(MolecularFeaturizer):
                 'Mol is being phased out as a parameter, please pass "datapoint" instead.'
             )
 
-        if self.smiles:
-            return Chem.MolToSmiles(datapoint)
-        else:
-            return datapoint
+        return Chem.MolToSmiles(datapoint) if self.smiles else datapoint

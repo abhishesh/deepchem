@@ -66,10 +66,7 @@ class OneHotFeaturizer(Featurizer):
             raise ValueError("All values in charset must be unique.")
         self.charset = charset
         self.max_length = Optional[int]
-        if max_length is not None:
-            self.max_length = int(max_length)
-        else:
-            self.max_length = None
+        self.max_length = int(max_length) if max_length is not None else None
 
     def featurize(self,
                   datapoints: Iterable[Any],
@@ -86,10 +83,11 @@ class OneHotFeaturizer(Featurizer):
 
         """
         datapoints = list(datapoints)
-        if (len(datapoints) < 1):
-            return np.array([])
-        # Featurize data using featurize() in parent class
-        return Featurizer.featurize(self, datapoints, log_every_n)
+        return (
+            Featurizer.featurize(self, datapoints, log_every_n)
+            if datapoints
+            else np.array([])
+        )
 
     def _featurize(self, datapoint: Any, **kwargs):
         # Featurize str data

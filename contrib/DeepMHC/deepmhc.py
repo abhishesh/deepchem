@@ -54,12 +54,11 @@ class DeepMHC(TensorGraph):
     output = Dense(out_channels=1, in_layers=[dropout], activation_fn=None)
     self.add_output(output)
 
-    if self.mode == "regression":
-      label = Label(shape=(None, 1))
-      loss = L2Loss(in_layers=[label, output])
-    else:
+    if self.mode != "regression":
       raise NotImplementedError(
           "Classification support not added yet. Missing details in paper.")
+    label = Label(shape=(None, 1))
+    loss = L2Loss(in_layers=[label, output])
     weights = Weights(shape=(None,))
     weighted_loss = WeightedError(in_layers=[loss, weights])
     self.set_loss(weighted_loss)
@@ -71,11 +70,9 @@ class DeepMHC(TensorGraph):
                         deterministic=True,
                         pad_batches=True):
 
-    for epoch in range(epochs):
-      for (X_b, y_b, w_b,
-           ids_b) in dataset.iterbatches(batch_size=self.batch_size):
-        feed_dict = {}
-        feed_dict[self.one_hot_seq] = X_b
+    for _ in range(epochs):
+      for X_b, y_b, w_b, ids_b in dataset.iterbatches(batch_size=self.batch_size):
+        feed_dict = {self.one_hot_seq: X_b}
         if y_b is not None:
           feed_dict[self.labels[0]] = -np.log10(y_b)
         if w_b is not None and not predict:
@@ -92,7 +89,7 @@ class DeepMHC(TensorGraph):
 
   def create_estimator_inputs(self, feature_columns, weight_column, features,
                               labels, mode):
-    tensors = dict()
+    tensors = {}
     for layer, column in zip(self.features, feature_columns):
       feature_column = tf.feature_column.input_layer(features, [column])
       if feature_column.dtype != column.dtype:

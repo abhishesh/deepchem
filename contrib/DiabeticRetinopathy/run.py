@@ -6,6 +6,7 @@ Created on Mon Sep 10 06:12:11 2018
 @author: zqwu
 """
 
+
 import deepchem as dc
 import numpy as np
 import pandas as pd
@@ -34,7 +35,7 @@ cm = [dc.metrics.Metric(ConfusionMatrix, mode='classification')]
 
 logger = logging.getLogger('deepchem.models.tensorgraph.tensor_graph')
 logger.setLevel(logging.DEBUG)
-for i in range(10):
+for _ in range(10):
   model.fit(train, nb_epoch=10, checkpoint_interval=3512)
   model.evaluate(train, metrics)
   model.evaluate(valid, metrics)

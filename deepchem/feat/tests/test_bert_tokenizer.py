@@ -18,7 +18,7 @@ def test_featurize():
     feats = featurizer(sequences)
     long_feat = featurizer(sequence_long)
     assert (len(feats) == 2)
-    assert (all([len(f) == 3 for f in feats]))
+    assert all(len(f) == 3 for f in feats)
     assert (len(long_feat) == 1)
     assert (len(long_feat[0] == 2))
 

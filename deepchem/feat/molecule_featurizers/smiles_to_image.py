@@ -70,8 +70,8 @@ class SmilesToImage(MolecularFeaturizer):
         """
         if img_spec not in ["std", "engd"]:
             raise ValueError(
-                "Image mode must be one of std or engd. {} is not supported".
-                format(img_spec))
+                f"Image mode must be one of std or engd. {img_spec} is not supported"
+            )
 
         self.img_size = img_size
         self.max_len = max_len

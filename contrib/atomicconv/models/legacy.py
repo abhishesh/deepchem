@@ -83,11 +83,11 @@ class TensorflowGraph(object):
 
   @staticmethod
   def get_feed_dict(named_values):
-    feed_dict = {}
     placeholder_root = "placeholders"
-    for name, value in named_values.items():
-      feed_dict['{}/{}:0'.format(placeholder_root, name)] = value
-    return feed_dict
+    return {
+        f'{placeholder_root}/{name}:0': value
+        for name, value in named_values.items()
+    }
 
 
 class TensorflowGraphModel(Model):
@@ -192,11 +192,10 @@ class TensorflowGraphModel(Model):
     self.verbose = verbose
     self.seed = seed
 
-    if logdir is not None:
-      if not os.path.exists(logdir):
-        os.makedirs(logdir)
-    else:
+    if logdir is None:
       logdir = tempfile.mkdtemp()
+    elif not os.path.exists(logdir):
+      os.makedirs(logdir)
     self.logdir = logdir
 
     # Guard variable to make sure we don't Restore() this model
@@ -266,8 +265,7 @@ class TensorflowGraphModel(Model):
       with TensorflowGraph.shared_name_scope('costs', graph, name_scopes):
         for task in range(self.n_tasks):
           task_str = str(task).zfill(len(str(self.n_tasks)))
-          with TensorflowGraph.shared_name_scope('cost_{}'.format(task_str),
-                                                 graph, name_scopes):
+          with TensorflowGraph.shared_name_scope(f'cost_{task_str}', graph, name_scopes):
             with tf.name_scope('weighted'):
               weighted_cost = self.cost(output[task], labels[task],
                                         weights[task])
@@ -370,8 +368,9 @@ class TensorflowGraphModel(Model):
     with graph.as_default():
       softmax = []
       with tf.name_scope('inference'):
-        for i, logits in enumerate(output):
-          softmax.append(tf.nn.softmax(logits, name='softmax_%d' % i))
+        softmax.extend(
+            tf.nn.softmax(logits, name='softmax_%d' % i)
+            for i, logits in enumerate(output))
       output = softmax
     return output
 
@@ -419,11 +418,10 @@ class TensorflowGraphModel(Model):
     placeholder_scope = TensorflowGraph.get_placeholder_scope(
         graph, name_scopes)
     with placeholder_scope:
-      for task in range(self.n_tasks):
-        weights.append(
-            tf.identity(
-                tf.placeholder(
-                    tf.float32, shape=[None], name='weights_%d' % task)))
+      weights.extend(
+          tf.identity(
+              tf.placeholder(tf.float32, shape=[None], name='weights_%d' % task))
+          for task in range(self.n_tasks))
     return weights
 
   def cost(self, output, labels, weights):
@@ -574,7 +572,7 @@ class TensorflowGraphModel(Model):
           N = int(filename.split("-")[1].split(".")[0])
           if N > highest_num:
             highest_num = N
-            last_checkpoint = "model.ckpt-" + str(N)
+            last_checkpoint = f"model.ckpt-{N}"
         except ValueError:
           pass
     return os.path.join(self.logdir, last_checkpoint)
@@ -624,13 +622,11 @@ class TensorflowClassifier(TensorflowGraphModel):
       n_classes = self.n_classes
       labels = []
       with placeholder_scope:
-        for task in range(self.n_tasks):
-          labels.append(
-              tf.identity(
-                  tf.placeholder(
-                      tf.float32,
-                      shape=[None, n_classes],
-                      name='labels_%d' % task)))
+        labels.extend(
+            tf.identity(
+                tf.placeholder(
+                    tf.float32, shape=[None, n_classes], name='labels_%d' %
+                    task)) for task in range(self.n_tasks))
       return labels
 
   def predict_on_batch(self, X):
@@ -675,8 +671,8 @@ class TensorflowClassifier(TensorflowGraphModel):
         elif batch_output.ndim == 2:
           batch_output = batch_output.transpose((1, 0))
         else:
-          raise ValueError('Unrecognized rank combination for output: %s' %
-                           (batch_output.shape,))
+          raise ValueError(
+              f'Unrecognized rank combination for output: {batch_output.shape}')
         output.append(batch_output)
 
         outputs = np.array(
@@ -723,8 +719,9 @@ class TensorflowClassifier(TensorflowGraphModel):
         elif batch_outputs.ndim == 2:
           batch_outputs = batch_outputs.transpose((1, 0))
         else:
-          raise ValueError('Unrecognized rank combination for output: %s ' %
-                           (batch_outputs.shape,))
+          raise ValueError(
+              f'Unrecognized rank combination for output: {batch_outputs.shape} '
+          )
 
       # Note that softmax is already applied in construct_grpah
       outputs = batch_outputs
@@ -776,11 +773,11 @@ class TensorflowRegressor(TensorflowGraphModel):
       batch_size = self.batch_size
       labels = []
       with placeholder_scope:
-        for task in range(self.n_tasks):
-          labels.append(
-              tf.identity(
-                  tf.placeholder(
-                      tf.float32, shape=[None], name='labels_%d' % task)))
+        labels.extend(
+            tf.identity(
+                tf.placeholder(
+                    tf.float32, shape=[None], name='labels_%d' % task))
+            for task in range(self.n_tasks))
     return labels
 
   def predict_on_batch(self, X):
@@ -825,13 +822,12 @@ class TensorflowRegressor(TensorflowGraphModel):
           batch_outputs = batch_outputs.transpose((1, 0, 2))
         elif batch_outputs.ndim == 2:
           batch_outputs = batch_outputs.transpose((1, 0))
-        # Handle edge case when batch-size is 1.
         elif batch_outputs.ndim == 1:
           n_samples = len(X)
           batch_outputs = batch_outputs.reshape((n_samples, n_tasks))
         else:
-          raise ValueError('Unrecognized rank combination for output: %s' %
-                           (batch_outputs.shape))
+          raise ValueError(
+              f'Unrecognized rank combination for output: {batch_outputs.shape}')
         # Prune away any padding that was added
         batch_outputs = batch_outputs[:n_samples]
         outputs.append(batch_outputs)
@@ -840,12 +836,10 @@ class TensorflowRegressor(TensorflowGraphModel):
 
     outputs = np.copy(outputs)
 
-    # Handle case of 0-dimensional scalar output
     if len(outputs.shape) > 0:
       return outputs[:len_unpadded]
-    else:
-      outputs = np.reshape(outputs, (1,))
-      return outputs
+    outputs = np.reshape(outputs, (1,))
+    return outputs
 
 
 class TensorflowMultiTaskRegressor(TensorflowRegressor):
@@ -896,19 +890,16 @@ class TensorflowMultiTaskRegressor(TensorflowRegressor):
         prev_layer = layer
         prev_layer_size = layer_sizes[i]
 
-      output = []
-      for task in range(self.n_tasks):
-        output.append(
-            tf.squeeze(
-                model_ops.fully_connected_layer(
-                    tensor=prev_layer,
-                    size=layer_sizes[i],
-                    weight_init=tf.truncated_normal(
-                        shape=[prev_layer_size, 1],
-                        stddev=weight_init_stddevs[i]),
-                    bias_init=tf.constant(value=bias_init_consts[i],
-                                          shape=[1]))))
-      return output
+      return [
+          tf.squeeze(
+              model_ops.fully_connected_layer(
+                  tensor=prev_layer,
+                  size=layer_sizes[i],
+                  weight_init=tf.truncated_normal(
+                      shape=[prev_layer_size, 1], stddev=weight_init_stddevs[i]),
+                  bias_init=tf.constant(value=bias_init_consts[i], shape=[1]),
+              )) for _ in range(self.n_tasks)
+      ]
 
   def construct_feed_dict(self, X_b, y_b=None, w_b=None, ids_b=None):
     """Construct a feed dictionary from minibatch data.
@@ -921,8 +912,7 @@ class TensorflowMultiTaskRegressor(TensorflowRegressor):
       w_b: np.ndarray of shape (batch_size, n_tasks)
       ids_b: List of length (batch_size) with datapoint identifiers.
     """
-    orig_dict = {}
-    orig_dict["mol_features"] = X_b
+    orig_dict = {"mol_features": X_b}
     for task in range(self.n_tasks):
       if y_b is not None:
         orig_dict["labels_%d" % task] = y_b[:, task]

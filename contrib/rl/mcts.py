@@ -135,9 +135,10 @@ class MCTS(object):
     if not self._state_is_list:
       state_shape = [state_shape]
       state_dtype = [state_dtype]
-    features = []
-    for s, d in zip(state_shape, state_dtype):
-      features.append(Feature(shape=[None] + list(s), dtype=tf.as_dtype(d)))
+    features = [
+        Feature(shape=[None] + list(s), dtype=tf.as_dtype(d))
+        for s, d in zip(state_shape, state_dtype)
+    ]
     policy_layers = self._policy.create_layers(features)
     action_prob = policy_layers['action_prob']
     value = policy_layers['value']
@@ -227,7 +228,7 @@ class MCTS(object):
 
       # Run the algorithm.
 
-      for iteration in range(iterations):
+      for _ in range(iterations):
         buffer = self._run_episodes(steps_per_iteration, temperature, manager,
                                     adapt_puct)
         self._optimize_policy(buffer, epochs_per_iteration)
@@ -295,16 +296,17 @@ class MCTS(object):
 
   def _create_feed_dict(self, state):
     """Create a feed dict for use by predict() or select_action()."""
-    feed_dict = dict((f.out_tensor, np.expand_dims(s, axis=0))
-                     for f, s in zip(self._features, state))
-    return feed_dict
+    return {
+        f.out_tensor: np.expand_dims(s, axis=0)
+        for f, s in zip(self._features, state)
+    }
 
   def _run_episodes(self, steps, temperature, manager, adapt_puct):
     """Simulate the episodes for one iteration."""
     buffer = []
     self._env.reset()
     root = TreeSearchNode(0.0)
-    for step in range(steps):
+    for _ in range(steps):
       prob, reward = self._do_tree_search(root, temperature, adapt_puct)
       state = self._env.state
       if not self._state_is_list:
@@ -348,7 +350,7 @@ class MCTS(object):
     """Perform the tree search for a state."""
     # Build the tree.
 
-    for i in range(self.n_search_episodes):
+    for _ in range(self.n_search_episodes):
       env = copy.deepcopy(self._env)
       self._create_trace(env, root, 1)
 

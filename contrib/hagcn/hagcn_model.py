@@ -62,20 +62,20 @@ class HAGCN(TensorGraph):
     self._build()
 
   def _build(self):
-    self.A_tilda_k = list()
-    for k in range(1, self.k_max + 1):
-      self.A_tilda_k.append(
-          Feature(
-              name="graph_adjacency_{}".format(k),
-              dtype=tf.float32,
-              shape=[None, self.max_nodes, self.max_nodes]))
+    self.A_tilda_k = []
+    self.A_tilda_k.extend(
+        Feature(
+            name=f"graph_adjacency_{k}",
+            dtype=tf.float32,
+            shape=[None, self.max_nodes, self.max_nodes],
+        ) for k in range(1, self.k_max + 1))
     self.X = Feature(
         name='atom_features',
         dtype=tf.float32,
         shape=[None, self.max_nodes, self.num_node_features])
 
-    graph_layers = list()
-    adaptive_filters = list()
+    graph_layers = []
+    adaptive_filters = []
 
     for index, k in enumerate(range(1, self.k_max + 1)):
 
@@ -125,11 +125,10 @@ class HAGCN(TensorGraph):
     if k == 0:
       return np.ones(inputs.shape)
 
-    if k % 2 == 0:
-      half = HAGCN.pow_k(inputs, k=k // 2)
-      return np.matmul(half, half)
-    else:
+    if k % 2 != 0:
       return np.matmul(inputs, HAGCN.pow_k(inputs, (k - 1) // 2))
+    half = HAGCN.pow_k(inputs, k=k // 2)
+    return np.matmul(half, half)
 
   def compute_adjacency_matrix(self, mol):
     """Computes the adjacency matrix for a mol."""
@@ -145,8 +144,7 @@ class HAGCN(TensorGraph):
   def compute_a_tilda_k(inputs, k=1):
     A_k = HAGCN.pow_k(inputs, k)
     A_k_I = A_k + np.eye(inputs.shape[-1])
-    A_tilda_k = np.minimum(A_k_I, 1)
-    return A_tilda_k
+    return np.minimum(A_k_I, 1)
 
   def default_generator(self,
                         dataset,
@@ -154,8 +152,8 @@ class HAGCN(TensorGraph):
                         predict=False,
                         deterministic=True,
                         pad_batches=True):
-    for epoch in range(epochs):
-      for (X_b, y_b, w_b, ids_b) in dataset.iterbatches(
+    for _ in range(epochs):
+      for X_b, y_b, w_b, ids_b in dataset.iterbatches(
           batch_size=self.batch_size,
           deterministic=deterministic,
           pad_batches=pad_batches):
@@ -165,7 +163,7 @@ class HAGCN(TensorGraph):
         if y_b is not None:
           feed_dict[self.labels[0]] = y_b
 
-        atom_features = list()
+        atom_features = []
         A_tilda_k = [[] for _ in range(1, self.k_max + 1)]
 
         for im, mol in enumerate(X_b):

@@ -35,10 +35,10 @@ def compute_charge_dictionary(molecule):
     rdkit_util.compute_charges(molecule))
     """
 
-    charge_dictionary = {}
-    for i, atom in enumerate(molecule.GetAtoms()):
-        charge_dictionary[i] = get_partial_charge(atom)
-    return charge_dictionary
+    return {
+        i: get_partial_charge(atom)
+        for i, atom in enumerate(molecule.GetAtoms())
+    }
 
 
 class ChargeVoxelizer(ComplexFeaturizer):
@@ -81,7 +81,7 @@ class ChargeVoxelizer(ComplexFeaturizer):
         self.voxel_width = voxel_width
         self.reduce_to_contacts = reduce_to_contacts
 
-    def _featurize(self, datapoint, **kwargs):  # -> Optional[np.ndarray]:
+    def _featurize(self, datapoint, **kwargs):    # -> Optional[np.ndarray]:
         """
         Compute featurization for a single mol/protein complex
 
@@ -118,17 +118,20 @@ class ChargeVoxelizer(ComplexFeaturizer):
             xyzs = [frag1_xyz, frag2_xyz]
             rdks = [frag1[1], frag2[1]]
             pairwise_features.append(
-                sum([
-                    voxelize(convert_atom_to_voxel,
-                             hash_function=None,
-                             coordinates=xyz,
-                             box_width=self.box_width,
-                             voxel_width=self.voxel_width,
-                             feature_dict=compute_charge_dictionary(mol),
-                             nb_channel=1,
-                             dtype="np.float16")
+                sum(
+                    voxelize(
+                        convert_atom_to_voxel,
+                        hash_function=None,
+                        coordinates=xyz,
+                        box_width=self.box_width,
+                        voxel_width=self.voxel_width,
+                        feature_dict=compute_charge_dictionary(mol),
+                        nb_channel=1,
+                        dtype="np.float16",
+                    )
                     for xyz, mol in zip(xyzs, rdks)
-                ]))
+                )
+            )
         # Features are of shape (voxels_per_edge, voxels_per_edge, voxels_per_edge, 1) so we should concatenate on the last axis.
         return np.concatenate(pairwise_features, axis=-1)
 
@@ -175,7 +178,7 @@ class SaltBridgeVoxelizer(ComplexFeaturizer):
         self.voxel_width = voxel_width
         self.reduce_to_contacts = reduce_to_contacts
 
-    def _featurize(self, datapoint, **kwargs):  # -> Optional[np.ndarray]:
+    def _featurize(self, datapoint, **kwargs):    # -> Optional[np.ndarray]:
         """
         Compute featurization for a single mol/protein complex
 
@@ -212,19 +215,21 @@ class SaltBridgeVoxelizer(ComplexFeaturizer):
             xyzs = [frag1_xyz, frag2_xyz]
             # rdks = [frag1[1], frag2[1]]
             pairwise_features.append(
-                sum([
-                    voxelize(convert_atom_pair_to_voxel,
-                             hash_function=None,
-                             coordinates=xyz,
-                             box_width=self.box_width,
-                             voxel_width=self.voxel_width,
-                             feature_list=compute_salt_bridges(
-                                 frag1[1],
-                                 frag2[1],
-                                 distances,
-                                 cutoff=self.cutoff),
-                             nb_channel=1) for xyz in xyzs
-                ]))
+                sum(
+                    voxelize(
+                        convert_atom_pair_to_voxel,
+                        hash_function=None,
+                        coordinates=xyz,
+                        box_width=self.box_width,
+                        voxel_width=self.voxel_width,
+                        feature_list=compute_salt_bridges(
+                            frag1[1], frag2[1], distances, cutoff=self.cutoff
+                        ),
+                        nb_channel=1,
+                    )
+                    for xyz in xyzs
+                )
+            )
         # Features are of shape (voxels_per_edge, voxels_per_edge, voxels_per_edge, 1) so we should concatenate on the last axis.
         return np.concatenate(pairwise_features, axis=-1)
 
@@ -270,7 +275,7 @@ class CationPiVoxelizer(ComplexFeaturizer):
         self.box_width = box_width
         self.voxel_width = voxel_width
 
-    def _featurize(self, datapoint, **kwargs):  # -> Optional[np.ndarray]:
+    def _featurize(self, datapoint, **kwargs):    # -> Optional[np.ndarray]:
         """
         Compute featurization for a single mol/protein complex
 
@@ -304,22 +309,27 @@ class CationPiVoxelizer(ComplexFeaturizer):
             xyzs = [frag1_xyz, frag2_xyz]
             # rdks = [frag1[1], frag2[1]]
             pairwise_features.append(
-                sum([
-                    voxelize(convert_atom_to_voxel,
-                             hash_function=None,
-                             box_width=self.box_width,
-                             voxel_width=self.voxel_width,
-                             coordinates=xyz,
-                             feature_dict=cation_pi_dict,
-                             nb_channel=1) for xyz, cation_pi_dict in zip(
-                                 xyzs,
-                                 compute_binding_pocket_cation_pi(
-                                     frag1[1],
-                                     frag2[1],
-                                     dist_cutoff=self.cutoff,
-                                     angle_cutoff=self.angle_cutoff,
-                                 ))
-                ]))
+                sum(
+                    voxelize(
+                        convert_atom_to_voxel,
+                        hash_function=None,
+                        box_width=self.box_width,
+                        voxel_width=self.voxel_width,
+                        coordinates=xyz,
+                        feature_dict=cation_pi_dict,
+                        nb_channel=1,
+                    )
+                    for xyz, cation_pi_dict in zip(
+                        xyzs,
+                        compute_binding_pocket_cation_pi(
+                            frag1[1],
+                            frag2[1],
+                            dist_cutoff=self.cutoff,
+                            angle_cutoff=self.angle_cutoff,
+                        ),
+                    )
+                )
+            )
         # Features are of shape (voxels_per_edge, voxels_per_edge, voxels_per_edge, 1) so we should concatenate on the last axis.
         return np.concatenate(pairwise_features, axis=-1)
 
@@ -367,7 +377,7 @@ class PiStackVoxelizer(ComplexFeaturizer):
         self.box_width = box_width
         self.voxel_width = voxel_width
 
-    def _featurize(self, datapoint, **kwargs):  # -> Optional[np.ndarray]:
+    def _featurize(self, datapoint, **kwargs):    # -> Optional[np.ndarray]:
         """
         Compute featurization for a single mol/protein complex
 
@@ -406,29 +416,33 @@ class PiStackVoxelizer(ComplexFeaturizer):
                                  distances,
                                  dist_cutoff=self.cutoff,
                                  angle_cutoff=self.angle_cutoff))
-            pi_parallel_tensor = sum([
-                voxelize(convert_atom_to_voxel,
-                         hash_function=None,
-                         box_width=self.box_width,
-                         voxel_width=self.voxel_width,
-                         coordinates=xyz,
-                         feature_dict=feature_dict,
-                         nb_channel=1)
-                for (xyz, feature_dict
-                    ) in zip(xyzs, [ligand_pi_parallel, protein_pi_parallel])
-            ])
+            pi_parallel_tensor = sum(
+                voxelize(
+                    convert_atom_to_voxel,
+                    hash_function=None,
+                    box_width=self.box_width,
+                    voxel_width=self.voxel_width,
+                    coordinates=xyz,
+                    feature_dict=feature_dict,
+                    nb_channel=1,
+                )
+                for (xyz, feature_dict) in zip(
+                    xyzs, [ligand_pi_parallel, protein_pi_parallel]
+                )
+            )
 
-            pi_t_tensor = sum([
-                voxelize(convert_atom_to_voxel,
-                         hash_function=None,
-                         box_width=self.box_width,
-                         voxel_width=self.voxel_width,
-                         coordinates=frag1_xyz,
-                         feature_dict=protein_pi_t,
-                         nb_channel=1)
-                for (xyz,
-                     feature_dict) in zip(xyzs, [ligand_pi_t, protein_pi_t])
-            ])
+            pi_t_tensor = sum(
+                voxelize(
+                    convert_atom_to_voxel,
+                    hash_function=None,
+                    box_width=self.box_width,
+                    voxel_width=self.voxel_width,
+                    coordinates=frag1_xyz,
+                    feature_dict=protein_pi_t,
+                    nb_channel=1,
+                )
+                for (xyz, feature_dict) in zip(xyzs, [ligand_pi_t, protein_pi_t])
+            )
 
             pairwise_features.append(
                 np.concatenate([pi_parallel_tensor, pi_t_tensor], axis=-1))
@@ -595,7 +609,7 @@ class HydrogenBondVoxelizer(ComplexFeaturizer):
         self.voxel_width = voxel_width
         self.reduce_to_contacts = reduce_to_contacts
 
-    def _featurize(self, datapoint, **kwargs):  # -> Optional[np.ndarray]:
+    def _featurize(self, datapoint, **kwargs):    # -> Optional[np.ndarray]:
         """
         Compute featurization for a single mol/protein complex
 
@@ -631,19 +645,30 @@ class HydrogenBondVoxelizer(ComplexFeaturizer):
             xyzs = [frag1_xyz, frag2_xyz]
             # rdks = [frag1[1], frag2[1]]
             pairwise_features.append(
-                np.concatenate([
-                    sum([
-                        voxelize(convert_atom_pair_to_voxel,
-                                 hash_function=None,
-                                 box_width=self.box_width,
-                                 voxel_width=self.voxel_width,
-                                 coordinates=xyz,
-                                 feature_list=hbond_list,
-                                 nb_channel=1) for xyz in xyzs
-                    ]) for hbond_list in compute_hydrogen_bonds(
-                        frag1, frag2, distances, self.distance_bins,
-                        self.angle_cutoffs)
-                ],
-                               axis=-1))
+                np.concatenate(
+                    [
+                        sum(
+                            voxelize(
+                                convert_atom_pair_to_voxel,
+                                hash_function=None,
+                                box_width=self.box_width,
+                                voxel_width=self.voxel_width,
+                                coordinates=xyz,
+                                feature_list=hbond_list,
+                                nb_channel=1,
+                            )
+                            for xyz in xyzs
+                        )
+                        for hbond_list in compute_hydrogen_bonds(
+                            frag1,
+                            frag2,
+                            distances,
+                            self.distance_bins,
+                            self.angle_cutoffs,
+                        )
+                    ],
+                    axis=-1,
+                )
+            )
         # Features are of shape (voxels_per_edge, voxels_per_edge, voxels_per_edge, 1) so we should concatenate on the last axis.
         return np.concatenate(pairwise_features, axis=-1)

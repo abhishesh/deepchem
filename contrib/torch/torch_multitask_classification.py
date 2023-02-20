@@ -71,7 +71,7 @@ class TorchMultitaskClassification(TorchMultitaskModel):
 
     self.task_W_list = []
     self.task_b_list = []
-    for i in range(self.n_tasks):
+    for _ in range(self.n_tasks):
       W_init = np.random.normal(0, weight_init_stddevs[-1],
                                 (prev_layer_size, self.n_classes))
       W_init = torch.cuda.FloatTensor(W_init)
@@ -101,11 +101,11 @@ class TorchMultitaskClassification(TorchMultitaskModel):
     return outputs
 
   def cost(self, logit, label, weight):
-    loss = []
-    for i in range(logit.size()[0]):
-      loss.append(
-          torch.nn.functional.cross_entropy(logit[i, :], label[i].long()).mul(
-              weight[i]))
+    loss = [
+        torch.nn.functional.cross_entropy(logit[i, :],
+                                          label[i].long()).mul(weight[i])
+        for i in range(logit.size()[0])
+    ]
     loss = torch.cat(loss).mean()
     return loss
 
@@ -119,5 +119,4 @@ class TorchMultitaskClassification(TorchMultitaskModel):
   def predict_proba_on_batch(self, X_batch):
     X_batch = torch.autograd.Variable(torch.cuda.FloatTensor(X_batch))
     outputs = self.forward(X_batch, training=False)
-    y_pred_batch = torch.stack(outputs, 1).data.cpu().numpy()[:]
-    return y_pred_batch
+    return torch.stack(outputs, 1).data.cpu().numpy()[:]

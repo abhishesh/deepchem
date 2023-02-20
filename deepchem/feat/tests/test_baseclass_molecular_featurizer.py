@@ -18,10 +18,7 @@ class DummyTestClass(MolecularFeaturizer):
         Returns mapping of atomic number and atom ranks as feature vector (only for testing purposes)
         """
         if isinstance(datapoint, Chem.rdchem.Mol):
-            atoms_order = []
-            for atom in datapoint.GetAtoms():
-                atoms_order.append((atom.GetAtomicNum(), atom.GetIdx()))
-            return atoms_order
+            return [(atom.GetAtomicNum(), atom.GetIdx()) for atom in datapoint.GetAtoms()]
 
 
 class DummyTestClass2(MolecularFeaturizer):
@@ -37,10 +34,7 @@ class DummyTestClass2(MolecularFeaturizer):
         Returns mapping of atomic number and atom ranks as feature vector (only for testing purposes)
         """
         if isinstance(datapoint, Chem.rdchem.Mol):
-            atoms_order = []
-            for atom in datapoint.GetAtoms():
-                atoms_order.append((atom.GetAtomicNum(), atom.GetIdx()))
-            return atoms_order
+            return [(atom.GetAtomicNum(), atom.GetIdx()) for atom in datapoint.GetAtoms()]
 
 
 def get_edge_index(mol):
@@ -69,19 +63,16 @@ class TestUpdatedMolecularFeaturizer(unittest.TestCase):
         mol = Chem.MolFromSmiles(self.smile)
 
         self.original_atoms_order = []
-        for atom in mol.GetAtoms():
-            self.original_atoms_order.append(
-                (atom.GetAtomicNum(), atom.GetIdx()
-                ))  # mapping of atomic number and original atom ordering
-
+        self.original_atoms_order.extend(
+            (atom.GetAtomicNum(), atom.GetIdx()) for atom in mol.GetAtoms()
+        )
         new_order = rdmolfiles.CanonicalRankAtoms(mol)
         canonical_mol = rdmolops.RenumberAtoms(mol, new_order)
         self.canonical_atoms_order = []
-        for atom in canonical_mol.GetAtoms():
-            self.canonical_atoms_order.append(
-                (atom.GetAtomicNum(), atom.GetIdx()
-                ))  # mapping of atomic number and canonical atom ordering
-
+        self.canonical_atoms_order.extend(
+            (atom.GetAtomicNum(), atom.GetIdx())
+            for atom in canonical_mol.GetAtoms()
+        )
         self.bond_index = get_edge_index(
             mol)  # bond index based on original atom order
         self.canonical_bond_index = get_edge_index(

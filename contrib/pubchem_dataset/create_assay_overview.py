@@ -30,8 +30,8 @@ class PCBADatsetBuilder:
     """Find the union of all compounds tested across one or more assays
     """
 
-    assay_paths = list()
-    cid_list = np.array(list(), dtype=np.int64)
+    assay_paths = []
+    cid_list = np.array([], dtype=np.int64)
     assay_no = 0
     for path, dirs, filenames in os.walk(sdf_dir):
       for dir in dirs:
@@ -70,9 +70,7 @@ class PCBADatsetBuilder:
     assays_url = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/assay/target/genesymbol/{0}/aids/TXT".format(
         gene_symbol)
     r = requests.get(assays_url)
-    assays_to_parse = [
-        "PCBA-" + str(x) for x in r.text.split('\n') if len(x) > 0
-    ]
+    assays_to_parse = [f"PCBA-{str(x)}" for x in r.text.split('\n') if len(x) > 0]
     file_name = "pcba_{0}.csv".format(gene_symbol)
     self.create_assay_file(assays_to_parse=assays_to_parse, file_name=file_name)
 
@@ -96,12 +94,12 @@ class PCBADatsetBuilder:
     print("Creating overview of {0} assays".format(len(assay_paths)))
 
     path_final = os.path.join(data_dir, file_name)
-    assay_results = list()
-    assay_names = list()
+    assay_names = []
     cid_len = cid_ref_list.size
 
     all_assay_start = time.time()
 
+    assay_results = []
     for assay_path in assay_paths:
 
       assay_start = time.time()
@@ -122,16 +120,11 @@ class PCBADatsetBuilder:
       df = df.set_index("PUBCHEM_CID")
       df = df[~df.index.duplicated(keep='last')]
 
-      assay_results_array = array.array('i', (-1 for i in range(0, cid_len)))
+      assay_results_array = array.array('i', (-1 for _ in range(cid_len)))
       print(assay_path)
-      for i in range(0, cid_len):
+      for i in range(cid_len):
         cid = cid_ref_list[i]
-        if cid in df.index:
-          val = df.get_value(cid, assay_name)
-        else:
-          # Just write NA
-          val = -1
-
+        val = df.get_value(cid, assay_name) if cid in df.index else -1
         assay_results_array[i] = val
 
       assay_names.append(assay_name)
@@ -145,8 +138,9 @@ class PCBADatsetBuilder:
 
     all_assay_end = time.time()
 
-    print("Parsed all assays in: {} hours".format((
-        all_assay_end - all_assay_start) / 3600))
+    print(
+        f"Parsed all assays in: {(all_assay_end - all_assay_start) / 3600} hours"
+    )
 
     smiles_start = time.time()
 
@@ -154,41 +148,33 @@ class PCBADatsetBuilder:
     with open(os.path.join(data_dir, "pubchemsmiles_tuple.pickle"), "rb") as f:
       keys, values = pickle.load(f)
 
-    header_line = list()
-    header_line.append("mol_id")
-    header_line.append(",smiles")
+    header_line = ["mol_id", ",smiles"]
     for assay_name in assay_names:
-      header_line.append(",")
-      header_line.append(assay_name)
+      header_line.extend((",", assay_name))
     header_line_txt = "".join(header_line)
 
-    f_final = open(path_final, "w+")
-    f_final.write(header_line_txt + "\n")
+    with open(path_final, "w+") as f_final:
+      f_final.write(header_line_txt + "\n")
 
-    for i in range(0, cid_len):
-      cid = cid_ref_list[i]
+      for i in range(cid_len):
+        cid = cid_ref_list[i]
 
-      # printing the mol_id
-      line_for_comp = "CID" + str(cid)
+            # printing the mol_id
+        line_for_comp = f"CID{str(cid)}"
 
-      # printing the SMILES
-      bisect_pos = bisect_left(keys, cid, 0)
-      cid_pos = bisect_pos if bisect_pos != len(
-          keys) and keys[bisect_pos] == cid else -1
+        # printing the SMILES
+        bisect_pos = bisect_left(keys, cid, 0)
+        cid_pos = bisect_pos if bisect_pos != len(
+            keys) and keys[bisect_pos] == cid else -1
 
-      if cid_pos == -1:
-        continue
+        if cid_pos == -1:
+          continue
 
-      line_for_comp += "," + str(values[cid_pos])
-      for j in range(0, assay_results_len):
-        val = assay_results[j][i]
-        if val == -1:
-          line_for_comp += ","
-        else:
-          line_for_comp += "," + str(val)
-      f_final.write(line_for_comp + "\n")
-
-    f_final.close()
+        line_for_comp += f",{str(values[cid_pos])}"
+        for j in range(assay_results_len):
+          val = assay_results[j][i]
+          line_for_comp += "," if val == -1 else f",{str(val)}"
+        f_final.write(line_for_comp + "\n")
 
     # Now gzip it
     with open(path_final, 'rb') as f_in:
@@ -199,11 +185,11 @@ class PCBADatsetBuilder:
     os.remove(path_final)
     smiles_end = time.time()
 
-    print("Smiles joined and gzip in: {} hours".format((
-        smiles_end - smiles_start) / 3600))
+    print(f"Smiles joined and gzip in: {(smiles_end - smiles_start) / 3600} hours")
 
-    print("Finished creating dataset: {} in: {} hours".format(
-        file_name, (smiles_end - all_assay_start) / 3600))
+    print(
+        f"Finished creating dataset: {file_name} in: {(smiles_end - all_assay_start) / 3600} hours"
+    )
 
 
 parser = argparse.ArgumentParser(

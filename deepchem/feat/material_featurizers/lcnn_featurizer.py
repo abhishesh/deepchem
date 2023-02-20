@@ -183,8 +183,7 @@ class LCNNFeaturizer(MaterialStructureFeaturizer):
         config_size = xNSs.shape
         v = np.arange(0, len(xSites)).repeat(config_size[2] * config_size[3])
         u = xNSs.flatten()
-        graph = GraphData(node_features=xSites, edge_index=np.array([u, v]))
-        return graph
+        return GraphData(node_features=xSites, edge_index=np.array([u, v]))
 
 
 class _SiteEnvironment(object):
@@ -266,7 +265,7 @@ class _SiteEnvironment(object):
         mindists = defaultdict(list)
         for i, row in enumerate(dists):
             row_dists = defaultdict(list)
-            for j in range(0, len(sitetypes)):
+            for j in range(len(sitetypes)):
                 if i == j:
                     continue
                 # Sort by bond
@@ -366,8 +365,10 @@ class _SiteEnvironment(object):
         elif len(self.G.edges) != len(G.edges):
             logging.warning("Expected the number of edges to be equal",
                             len(self.G.edges), len(G.edges))
-            s = 'Number of edges is not equal.\n'
-            s += "- Is the data point's cell a redefined lattice of primitive cell?\n"
+            s = (
+                'Number of edges is not equal.\n'
+                + "- Is the data point's cell a redefined lattice of primitive cell?\n"
+            )
             s += '- If relaxed structure is used, you may want to check structure or increase Gatol\n'
             raise ValueError(s)
         GM = iso.GraphMatcher(self.G, G, self._nm, self._em)
@@ -375,8 +376,10 @@ class _SiteEnvironment(object):
         ams = list(GM.isomorphisms_iter())
 
         if not ams:
-            s = 'No isomorphism found.\n'
-            s += "- Is the data point's cell a redefined lattice of primitive cell?\n"
+            s = (
+                'No isomorphism found.\n'
+                + "- Is the data point's cell a redefined lattice of primitive cell?\n"
+            )
             s += '- If relaxed structure is used, you may want to check structure or increase rtol\n'
             raise ValueError(s)
 
@@ -397,10 +400,11 @@ class _SiteEnvironment(object):
         minrmsd = rmsd[mini]
         if minrmsd < self.tol:
             return ams[mini]
-        else:
-            s = 'No isomorphism found.\n'
-            s += '-Consider increasing neighbor finding tolerance'
-            raise ValueError(s)
+        s = (
+            'No isomorphism found.\n'
+            + '-Consider increasing neighbor finding tolerance'
+        )
+        raise ValueError(s)
 
 
 class _SiteEnvironments(object):
@@ -671,7 +675,7 @@ def _get_SiteEnvironments(struct: PymatgenStructure,
         for n in neighbors[site_idx]:
             # if PBC condition is fulfilled..
             c = np.around(n[0].frac_coords, 10)
-            withinPBC = np.logical_and(0 <= c, c < 1)
+            withinPBC = np.logical_and(c >= 0, c < 1)
             if np.all(withinPBC[~pbc]):
                 local_env_xyz.append(n[0].coords)
                 local_env_sym.append(n[0].specie)
@@ -685,7 +689,7 @@ def _get_SiteEnvironments(struct: PymatgenStructure,
                 Molecule(local_env_sym, local_env_pos),  # type: ignore
                 eigen_tolerance=eigen_tol)
             pg = finder.get_pointgroup()
-            for i, op in enumerate(pg):
+            for op in pg:
                 newpos = op.operate_multi(local_env_pos)
                 perm.append(
                     np.argmin(cdist(local_env_pos, newpos), axis=1).tolist())

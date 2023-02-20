@@ -86,24 +86,27 @@ class RdkitGridFeaturizer(ComplexFeaturizer):
         cation_pi_angle_cutoff: 30.0
         """
 
-        # check if user tries to set removed arguments
-        deprecated_args = [
-            'box_x', 'box_y', 'box_z', 'save_intermediates',
-            'voxelize_features', 'parallel', 'voxel_feature_types'
-        ]
-
         # list of features that require sanitized molecules
         require_sanitized = ['pi_stack', 'cation_pi', 'ecfp_ligand']
 
         # not implemented featurization types
         not_implemented = ['sybyl']
 
+        deprecated_args = [
+            'box_x',
+            'box_y',
+            'box_z',
+            'save_intermediates',
+            'voxelize_features',
+            'parallel',
+            'voxel_feature_types',
+        ]
         for arg in deprecated_args:
             if arg in kwargs and verbose:
                 logger.warning(
-                    '%s argument was removed and it is ignored,'
-                    ' using it will result in error in version 1.4' % arg,
-                    DeprecationWarning)
+                    f'{arg} argument was removed and it is ignored, using it will result in error in version 1.4',
+                    DeprecationWarning,
+                )
 
         self.verbose = verbose
         self.sanitize = sanitize
@@ -172,23 +175,21 @@ class RdkitGridFeaturizer(ComplexFeaturizer):
             if self.sanitize is False and feature_type in require_sanitized:
                 if self.verbose:
                     logger.warning(
-                        'sanitize is set to False, %s feature will be ignored' %
-                        feature_type)
+                        f'sanitize is set to False, {feature_type} feature will be ignored'
+                    )
                 continue
             if feature_type in not_implemented:
                 if self.verbose:
                     logger.warning(
-                        '%s feature is not implemented yet and will be ignored'
-                        % feature_type)
+                        f'{feature_type} feature is not implemented yet and will be ignored'
+                    )
                 continue
 
             if feature_type in self.FLAT_FEATURES:
                 self.feature_types.append((True, feature_type))
                 if self.flatten is False:
                     if self.verbose:
-                        logger.warning(
-                            '%s feature is used, output will be flattened' %
-                            feature_type)
+                        logger.warning(f'{feature_type} feature is used, output will be flattened')
                     self.flatten = True
 
             elif feature_type in self.VOXEL_FEATURES:
@@ -221,7 +222,7 @@ class RdkitGridFeaturizer(ComplexFeaturizer):
                             'Flat feature are used, output will be flattened')
                     self.flatten = True
             elif self.verbose:
-                logger.warning('Ignoring unknown feature %s' % feature_type)
+                logger.warning(f'Ignoring unknown feature {feature_type}')
 
     def _compute_feature(self, feature_name, prot_xyz, prot_rdk, lig_xyz,
                          lig_rdk, distances):
@@ -261,7 +262,7 @@ class RdkitGridFeaturizer(ComplexFeaturizer):
             ]
         if feature_name == 'ecfp':
             return [
-                sum([
+                sum(
                     voxelize(
                         convert_atom_to_voxel,
                         xyz,
@@ -270,14 +271,18 @@ class RdkitGridFeaturizer(ComplexFeaturizer):
                         hash_function=hash_ecfp,
                         feature_dict=ecfp_dict,
                         nb_channel=2**self.ecfp_power,
-                    ) for xyz, ecfp_dict in zip(
+                    )
+                    for xyz, ecfp_dict in zip(
                         (prot_xyz, lig_xyz),
                         featurize_contacts_ecfp(
-                            (prot_xyz, prot_rdk), (lig_xyz, lig_rdk),
+                            (prot_xyz, prot_rdk),
+                            (lig_xyz, lig_rdk),
                             distances,
                             cutoff=self.cutoffs['ecfp_cutoff'],
-                            ecfp_degree=self.ecfp_degree))
-                ])
+                            ecfp_degree=self.ecfp_degree,
+                        ),
+                    )
+                )
             ]
         if feature_name == 'splif':
             return [
@@ -334,16 +339,18 @@ class RdkitGridFeaturizer(ComplexFeaturizer):
             ]
         if feature_name == 'charge':
             return [
-                sum([
-                    voxelize(convert_atom_to_voxel,
-                             xyz,
-                             box_width=self.box_width,
-                             voxel_width=self.voxel_width,
-                             feature_dict=compute_charge_dictionary(mol),
-                             nb_channel=1,
-                             dtype="np.float16")
+                sum(
+                    voxelize(
+                        convert_atom_to_voxel,
+                        xyz,
+                        box_width=self.box_width,
+                        voxel_width=self.voxel_width,
+                        feature_dict=compute_charge_dictionary(mol),
+                        nb_channel=1,
+                        dtype="np.float16",
+                    )
                     for xyz, mol in ((prot_xyz, prot_rdk), (lig_xyz, lig_rdk))
-                ])
+                )
             ]
         if feature_name == 'hbond':
             return [
@@ -368,7 +375,7 @@ class RdkitGridFeaturizer(ComplexFeaturizer):
                                      self.box_width, self.voxel_width)
         if feature_name == 'cation_pi':
             return [
-                sum([
+                sum(
                     voxelize(
                         convert_atom_to_voxel,
                         xyz,
@@ -376,17 +383,19 @@ class RdkitGridFeaturizer(ComplexFeaturizer):
                         voxel_width=self.voxel_width,
                         feature_dict=cation_pi_dict,
                         nb_channel=1,
-                    ) for xyz, cation_pi_dict in zip(
+                    )
+                    for xyz, cation_pi_dict in zip(
                         (prot_xyz, lig_xyz),
                         compute_binding_pocket_cation_pi(
                             prot_rdk,
                             lig_rdk,
                             dist_cutoff=self.cutoffs['cation_pi_dist_cutoff'],
                             angle_cutoff=self.cutoffs['cation_pi_angle_cutoff'],
-                        ))
-                ])
+                        ),
+                    )
+                )
             ]
-        raise ValueError('Unknown feature type "%s"' % feature_name)
+        raise ValueError(f'Unknown feature type "{feature_name}"')
 
     def _featurize(self, complex):
         """Computes grid featurization of protein/ligand complex.
@@ -470,5 +479,4 @@ class RdkitGridFeaturizer(ComplexFeaturizer):
                     features_dict[system_id] = np.concatenate(feature_arrays,
                                                               axis=-1)
 
-        features = np.concatenate(list(features_dict.values()))
-        return features
+        return np.concatenate(list(features_dict.values()))

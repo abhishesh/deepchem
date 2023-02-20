@@ -4,9 +4,9 @@ from rdkit import Chem
 from rdkit.Chem import rdMolDescriptors
 import numpy as np
 
-def main() :
+def main():
     model = models.KeyedVectors.load_word2vec_format("vec.txt")
-    embeddings = list()
+    embeddings = []
 
     # Using canonical smiles for glycine, as in original research paper
     mol = Chem.MolFromSmiles("C(C(=O)O)N")
@@ -22,8 +22,6 @@ def main() :
         embeddings.append(totalvec)
     except Exception as e:
         print(e)
-        pass
-
     print(embeddings[0])
 
 

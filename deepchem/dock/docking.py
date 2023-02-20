@@ -138,8 +138,6 @@ class Docker(object):
                 score = self.scoring_model.predict(dataset)
                 yield (posed_complex, score)
         elif use_pose_generator_scores:
-            for posed_complex, score in zip(complexes, scores):
-                yield (posed_complex, score)
+            yield from zip(complexes, scores)
         else:
-            for posed_complex in complexes:
-                yield posed_complex
+            yield from complexes

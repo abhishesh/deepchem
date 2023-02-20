@@ -5,7 +5,6 @@ try:
 except ModuleNotFoundError:
     raise ImportError(
         'Transformers must be installed for RobertaFeaturizer to be used!')
-    pass
 
 
 class RobertaFeaturizer(RobertaTokenizerFast, Featurizer):
@@ -56,9 +55,7 @@ class RobertaFeaturizer(RobertaTokenizerFast, Featurizer):
             List containing two lists; the `input_ids` and the `attention_mask`
         """
 
-        # the encoding is natively a dictionary with keys 'input_ids' and 'attention_mask'
-        encoding = list(self(datapoint, **kwargs).values())
-        return encoding
+        return list(self(datapoint, **kwargs).values())
 
     def __call__(self, *args, **kwargs) -> Dict[str, List[int]]:
         return super().__call__(*args, **kwargs)

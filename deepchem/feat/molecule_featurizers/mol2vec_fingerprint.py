@@ -41,17 +41,15 @@ def _mol2alt_sentence(mol, radius):
     mol_atoms = [a.GetIdx() for a in mol.GetAtoms()]
     dict_atoms = {x: {r: None for r in radii} for x in mol_atoms}
 
-    for element in info:
-        for atom_idx, radius_at in info[element]:
+    for element, value in info.items():
+        for atom_idx, radius_at in value:
             dict_atoms[atom_idx][
                 radius_at] = element  # {atom number: {fp radius: identifier}}
 
     # merge identifiers alternating radius to sentence: atom 0 radius0, atom 0 radius 1, etc.
     identifiers_alt = []
-    for atom in dict_atoms:  # iterate over atoms
-        for r in radii:  # iterate over radii
-            identifiers_alt.append(dict_atoms[atom][r])
-
+    for value_ in dict_atoms.values():
+        identifiers_alt.extend(value_[r] for r in radii)
     alternating_sentence = map(str, [x for x in identifiers_alt if x])
 
     return list(alternating_sentence)
@@ -164,17 +162,21 @@ class Mol2VecFingerprint(MolecularFeaturizer):
         for sentence in sentences:
             if unseen:
                 vec.append(
-                    sum([
-                        model.wv.get_vector(y) if y in set(sentence) &
-                        keys else unseen_vec for y in sentence
-                    ]))
+                    sum(
+                        model.wv.get_vector(y)
+                        if y in set(sentence) & keys
+                        else unseen_vec
+                        for y in sentence
+                    )
+                )
             else:
                 vec.append(
-                    sum([
+                    sum(
                         model.wv.get_vector(y)
                         for y in sentence
                         if y in set(sentence) & keys
-                    ]))
+                    )
+                )
         return np.array(vec)
 
     def _featurize(self, datapoint: RDKitMol, **kwargs) -> np.ndarray:
@@ -198,6 +200,4 @@ class Mol2VecFingerprint(MolecularFeaturizer):
                 'Mol is being phased out as a parameter, please pass "datapoint" instead.'
             )
         sentence = self.mol2alt_sentence(datapoint, self.radius)
-        feature = self.sentences2vec([sentence], self.model,
-                                     unseen=self.unseen)[0]
-        return feature
+        return self.sentences2vec([sentence], self.model, unseen=self.unseen)[0]

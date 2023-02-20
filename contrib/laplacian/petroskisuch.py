@@ -43,7 +43,7 @@ class PetroskiSuchModel(TensorGraph):
     self.n_tasks = n_tasks
     self.mode = mode
     self.max_atoms = max_atoms
-    self.error_bars = True if 'error_bars' in kwargs and kwargs['error_bars'] else False
+    self.error_bars = bool('error_bars' in kwargs and kwargs['error_bars'])
     self.dropout = dropout
     kwargs['use_queue'] = False
     super(PetroskiSuchModel, self).__init__(**kwargs)
@@ -77,7 +77,7 @@ class PetroskiSuchModel(TensorGraph):
         out_channels=256, activation_fn=tf.nn.relu, in_layers=flattened)
     costs = []
     self.my_labels = []
-    for task in range(self.n_tasks):
+    for _ in range(self.n_tasks):
       if self.mode == 'classification':
         classification = Dense(
             out_channels=2, activation_fn=None, in_layers=[readout])

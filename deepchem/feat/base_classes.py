@@ -102,13 +102,13 @@ class Featurizer(object):
             value = self.__dict__[arg_name]
             # for str
             if isinstance(value, str):
-                value = "'" + value + "'"
+                value = f"'{value}'"
             # for list
             if isinstance(value, list):
                 threshold = get_print_threshold()
                 value = np.array2string(np.array(value), threshold=threshold)
-            args_info += arg_name + '=' + str(value) + ', '
-        return self.__class__.__name__ + '[' + args_info[:-2] + ']'
+            args_info += f'{arg_name}={str(value)}, '
+        return f'{self.__class__.__name__}[{args_info[:-2]}]'
 
     def __str__(self) -> str:
         """Convert self to str representation.
@@ -142,13 +142,13 @@ class Featurizer(object):
                 # skip list
                 if isinstance(arg_value, list):
                     continue
-                if isinstance(arg_value, str):
-                    # skip path string
-                    if "\\/." in arg_value or "/" in arg_value or '.' in arg_value:
-                        continue
+                if isinstance(arg_value, str) and (
+                    "\\/." in arg_value or "/" in arg_value or '.' in arg_value
+                ):
+                    continue
                 # main logic
                 if default != arg_value:
-                    override_args_info += '_' + arg_name + '_' + str(arg_value)
+                    override_args_info += f'_{arg_name}_{str(arg_value)}'
         return self.__class__.__name__ + override_args_info
 
 
@@ -282,7 +282,7 @@ molecule.
             )
 
         # Special case handling of single molecule
-        if isinstance(datapoints, str) or isinstance(datapoints, Mol):
+        if isinstance(datapoints, (str, Mol)):
             datapoints = [datapoints]
         else:
             # Convert iterables to list
@@ -294,21 +294,19 @@ molecule.
                 logger.info("Featurizing datapoint %i" % i)
 
             try:
-                if isinstance(mol, str):
                     # condition if the original atom order is required
-                    if hasattr(self, 'use_original_atoms_order'
+                if hasattr(self, 'use_original_atoms_order'
                               ) and self.use_original_atoms_order:
+                    if isinstance(mol, str):
                         # mol must be a RDKit Mol object, so parse a SMILES
                         mol = Chem.MolFromSmiles(mol)
-                    else:
-                        # mol must be a RDKit Mol object, so parse a SMILES
-                        mol = Chem.MolFromSmiles(mol)
-                        # SMILES is unique, so set a canonical order of atoms
-                        new_order = rdmolfiles.CanonicalRankAtoms(mol)
-                        mol = rdmolops.RenumberAtoms(mol, new_order)
-                kwargs_per_datapoint = {}
-                for key in kwargs.keys():
-                    kwargs_per_datapoint[key] = kwargs[key][i]
+                elif isinstance(mol, str):
+                    # mol must be a RDKit Mol object, so parse a SMILES
+                    mol = Chem.MolFromSmiles(mol)
+                    # SMILES is unique, so set a canonical order of atoms
+                    new_order = rdmolfiles.CanonicalRankAtoms(mol)
+                    mol = rdmolops.RenumberAtoms(mol, new_order)
+                kwargs_per_datapoint = {key: kwargs[key][i] for key in kwargs}
                 features.append(self._featurize(mol, **kwargs_per_datapoint))
             except Exception as e:
                 if isinstance(mol, Chem.rdchem.Mol):
@@ -316,7 +314,7 @@ molecule.
                 logger.warning(
                     "Failed to featurize datapoint %d, %s. Appending empty array",
                     i, mol)
-                logger.warning("Exception message: {}".format(e))
+                logger.warning(f"Exception message: {e}")
                 features.append(np.array([]))
 
         return np.asarray(features)

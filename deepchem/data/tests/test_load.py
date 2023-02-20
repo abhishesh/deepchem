@@ -85,7 +85,7 @@ class TestLoad(unittest.TestCase):
         y_tasks, w_tasks, = [], []
         dataset = dc.data.DiskDataset(data_dir)
         for ind, task in enumerate(all_tasks):
-            logger.info("Processing task %s" % task)
+            logger.info(f"Processing task {task}")
 
             _, y_task, w_task, _ = (dataset.X, dataset.y, dataset.w,
                                     dataset.ids)
@@ -123,7 +123,7 @@ class TestLoad(unittest.TestCase):
         all_tasks = ["task%d" % i for i in range(17)]
         # For debugging purposes
         n_tasks = 17
-        tasks = all_tasks[0:n_tasks]
+        tasks = all_tasks[:n_tasks]
 
         # multitask load
         loader = dc.data.CSVLoader(tasks=tasks,
@@ -137,7 +137,7 @@ class TestLoad(unittest.TestCase):
         # singletask load
         y_tasks, w_tasks, ids_tasks = [], [], []
         for task in tasks:
-            logger.info("Processing task %s" % task)
+            logger.info(f"Processing task {task}")
             if os.path.exists(data_dir):
                 shutil.rmtree(data_dir)
             loader = dc.data.CSVLoader(tasks=[task],

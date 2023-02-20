@@ -25,19 +25,26 @@ def load_pdbbind_labels(labels_file):
     for line in f:
       if line.startswith("#"):
         continue
+      splitline = line.split()
+      if len(splitline) == 8:
+        contents.append(splitline)
       else:
-        splitline = line.split()
-        if len(splitline) == 8:
-          contents.append(splitline)
-        else:
-          print("Incorrect data format")
-          print(splitline)
+        print("Incorrect data format")
+        print(splitline)
 
-  contents_df = pd.DataFrame(
+  return pd.DataFrame(
       contents,
-      columns=("PDB code", "resolution", "release year", "-logKd/Ki", "Kd/Ki",
-               "ignore-this-field", "reference", "ligand name"))
-  return contents_df
+      columns=(
+          "PDB code",
+          "resolution",
+          "release year",
+          "-logKd/Ki",
+          "Kd/Ki",
+          "ignore-this-field",
+          "reference",
+          "ligand name",
+      ),
+  )
 
 
 seed = 123
@@ -48,7 +55,7 @@ train_dir = os.path.join(base_dir, "train")
 test_dir = os.path.join(base_dir, "test")
 pdbbind_dir = os.path.join(base_dir, "v2015")
 
-print("Loading ids from %s" % data_dir)
+print(f"Loading ids from {data_dir}")
 d = dc.data.DiskDataset(data_dir)
 ids = d.ids
 
@@ -59,8 +66,7 @@ df_years = contents_df["release year"].values
 
 
 def shard_generator():
-  for ind, pdb_code in enumerate(ids):
-
+  for pdb_code in ids:
     i = df_ids.index(pdb_code)
     y = df_years[i]
     X = np.zeros((1, 5))

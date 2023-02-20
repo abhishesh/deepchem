@@ -208,7 +208,6 @@ class ProgressiveMultitaskRegressor(TensorflowMultiTaskRegressor):
   def add_adapter(self, all_layers, task, layer_num):
     """Add an adapter connection for given task/layer combo"""
     i = layer_num
-    prev_layers = []
     # Handle output layer
     if i < len(self.layer_sizes):
       layer_sizes = self.layer_sizes
@@ -222,9 +221,7 @@ class ProgressiveMultitaskRegressor(TensorflowMultiTaskRegressor):
       bias_init_const = self.bias_init_consts[-1]
     else:
       raise ValueError("layer_num too large for add_adapter.")
-    # Iterate over all previous tasks.
-    for prev_task in range(task):
-      prev_layers.append(all_layers[(i - 1, prev_task)])
+    prev_layers = [all_layers[(i - 1, prev_task)] for prev_task in range(task)]
     # prev_layers is a list with elements of size
     # (batch_size, layer_sizes[i-1])
     prev_layer = tf.concat(axis=1, values=prev_layers)
@@ -283,8 +280,7 @@ class ProgressiveMultitaskRegressor(TensorflowMultiTaskRegressor):
       with TensorflowGraph.shared_name_scope('costs', graph, name_scopes):
         for task in range(self.n_tasks):
           task_str = str(task).zfill(len(str(self.n_tasks)))
-          with TensorflowGraph.shared_name_scope('cost_{}'.format(task_str),
-                                                 graph, name_scopes):
+          with TensorflowGraph.shared_name_scope(f'cost_{task_str}', graph, name_scopes):
             with tf.name_scope('weighted'):
               weighted_cost = self.cost(output[task], labels[task],
                                         weights[task])
@@ -323,8 +319,7 @@ class ProgressiveMultitaskRegressor(TensorflowMultiTaskRegressor):
       w_b: np.ndarray of shape (batch_size, n_tasks)
       ids_b: List of length (batch_size) with datapoint identifiers.
     """
-    orig_dict = {}
-    orig_dict["mol_features"] = X_b
+    orig_dict = {"mol_features": X_b}
     for task in range(self.n_tasks):
       if y_b is not None:
         orig_dict["labels_%d" % task] = y_b[:, task]
@@ -376,13 +371,12 @@ class ProgressiveMultitaskRegressor(TensorflowMultiTaskRegressor):
           batch_outputs = batch_outputs.transpose((1, 0, 2))
         elif batch_outputs.ndim == 2:
           batch_outputs = batch_outputs.transpose((1, 0))
-        # Handle edge case when batch-size is 1.
         elif batch_outputs.ndim == 1:
           n_samples = len(X)
           batch_outputs = batch_outputs.reshape((n_samples, n_tasks))
         else:
-          raise ValueError('Unrecognized rank combination for output: %s' %
-                           (batch_outputs.shape))
+          raise ValueError(
+              f'Unrecognized rank combination for output: {batch_outputs.shape}')
         outputs = np.squeeze(batch_outputs)
 
     return outputs
@@ -411,11 +405,11 @@ class ProgressiveMultitaskRegressor(TensorflowMultiTaskRegressor):
     if tasks is None:
       tasks = range(self.n_tasks)
     with self.train_graph.graph.as_default():
-      task_train_ops = {}
-      for task in tasks:
-        task_train_ops[task] = self.get_task_training_op(
-            self.train_graph.graph, self.train_graph.loss, task)
-
+      task_train_ops = {
+          task: self.get_task_training_op(self.train_graph.graph,
+                                          self.train_graph.loss, task)
+          for task in tasks
+      }
       sess = self._get_shared_session(train=True)
       #with self._get_shared_session(train=True) as sess:
       sess.run(tf.global_variables_initializer())
@@ -511,8 +505,7 @@ class ProgressiveMultitaskRegressor(TensorflowMultiTaskRegressor):
       w_b: np.ndarray of shape (batch_size, n_tasks)
       ids_b: List of length (batch_size) with datapoint identifiers.
     """
-    orig_dict = {}
-    orig_dict["mol_features"] = X_b
+    orig_dict = {"mol_features": X_b}
     n_samples = len(X_b)
     for task in range(self.n_tasks):
       if (this_task == task) and y_b is not None:

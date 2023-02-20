@@ -181,9 +181,9 @@ class SupportGraphClassifier(Model):
         else:
           recent_losses.append(loss)
     time_end = time.time()
-    print("fit took %s seconds" % str(time_end - time_start))
-    print("feed_total: %s" % str(feed_total))
-    print("run_total: %s" % str(run_total))
+    print(f"fit took {str(time_end - time_start)} seconds")
+    print(f"feed_total: {str(feed_total)}")
+    print(f"run_total: {str(run_total)}")
 
   def save(self):
     """Save all models
@@ -266,8 +266,7 @@ class SupportGraphClassifier(Model):
       test_batch = NumpyDataset(X_batch, y_batch, w_batch, ids_batch)
       y_pred_batch = self.predict_on_batch(support, test_batch)
       y_preds.append(y_pred_batch)
-    y_pred = np.concatenate(y_preds)
-    return y_pred
+    return np.concatenate(y_preds)
 
   def predict_proba(self, support, test):
     """Makes predictions on test given support.
@@ -287,8 +286,7 @@ class SupportGraphClassifier(Model):
       test_batch = NumpyDataset(X_batch, y_batch, w_batch, ids_batch)
       y_pred_batch = self.predict_proba_on_batch(support, test_batch)
       y_preds.append(y_pred_batch)
-    y_pred = np.concatenate(y_preds)
-    return y_pred
+    return np.concatenate(y_preds)
 
   def predict_on_batch(self, support, test_batch):
     """Make predictions on batch of data."""

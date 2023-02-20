@@ -1,6 +1,7 @@
 """
 Script that trains Weave models on SIDER dataset.
 """
+
 from __future__ import print_function
 from __future__ import division
 from __future__ import unicode_literals
@@ -19,9 +20,9 @@ train_dataset, valid_dataset, test_dataset = sider_datasets
 metric = dc.metrics.Metric(
     dc.metrics.roc_auc_score, np.mean, mode="classification")
 
-max_atoms_train = max([mol.get_num_atoms() for mol in train_dataset.X])
-max_atoms_valid = max([mol.get_num_atoms() for mol in valid_dataset.X])
-max_atoms_test = max([mol.get_num_atoms() for mol in test_dataset.X])
+max_atoms_train = max(mol.get_num_atoms() for mol in train_dataset.X)
+max_atoms_valid = max(mol.get_num_atoms() for mol in valid_dataset.X)
+max_atoms_test = max(mol.get_num_atoms() for mol in test_dataset.X)
 max_atoms = max([max_atoms_train, max_atoms_valid, max_atoms_test])
 
 n_atom_feat = 75

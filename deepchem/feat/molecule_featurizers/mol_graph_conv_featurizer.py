@@ -250,8 +250,7 @@ class MolGraphConvFeaturizer(MolecularFeaturizer):
             elif isinstance(kwargs['pos_z'], np.ndarray):
                 pos_z = kwargs['pos_z']
 
-            for x, y, z in zip(pos_x, pos_y, pos_z):
-                pos.append([x, y, z])
+            pos.extend([x, y, z] for x, y, z in zip(pos_x, pos_y, pos_z))
             node_pos_features = np.asarray(pos)
         else:
             node_pos_features = None
@@ -366,11 +365,16 @@ class PagtnMolGraphFeaturizer(MolecularFeaturizer):
         imp_valence = get_atom_implicit_valence_one_hot(atom, list(range(6)),
                                                         False)
         armoticity = get_atom_is_in_aromatic_one_hot(atom)
-        atom_feat = np.concatenate([
-            atom_type, formal_charge, degree, exp_valence, imp_valence,
-            armoticity
-        ])
-        return atom_feat
+        return np.concatenate(
+            [
+                atom_type,
+                formal_charge,
+                degree,
+                exp_valence,
+                imp_valence,
+                armoticity,
+            ]
+        )
 
     def _edge_features(self, mol: RDKitMol, path_atoms: Tuple[int, ...],
                        ring_info) -> np.ndarray:
@@ -493,5 +497,4 @@ class PagtnMolGraphFeaturizer(MolecularFeaturizer):
         ],
                                    dtype=float)
         edge_index, edge_features = self._pagtn_edge_featurizer(datapoint)
-        graph = GraphData(node_features, edge_index, edge_features)
-        return graph
+        return GraphData(node_features, edge_index, edge_features)

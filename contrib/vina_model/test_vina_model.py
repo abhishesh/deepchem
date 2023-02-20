@@ -117,7 +117,7 @@ class TestVinaModel(test_util.TensorFlowTestCase):
       nbr_cells = compute_neighbor_cells(cells, ndim, n_cells)
       nbr_cells = nbr_cells.eval()
       assert len(nbr_cells) == n_cells
-      nbr_cells = [nbr_cell for nbr_cell in nbr_cells]
+      nbr_cells = list(nbr_cells)
       for nbr_cell in nbr_cells:
         assert nbr_cell.shape == (26,)
 

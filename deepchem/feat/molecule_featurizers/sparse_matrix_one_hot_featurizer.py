@@ -82,8 +82,7 @@ class SparseMatrixOneHotFeaturizer(Featurizer):
         # Featurize str data
         if isinstance(datapoint, (str, np.str_)):
             sequence = np.array(list(datapoint)).reshape(-1, 1)
-            sparse_mat = self.ohe.fit_transform(sequence)
-            return sparse_mat
+            return self.ohe.fit_transform(sequence)
         else:
             raise ValueError("Datapoint is not a string")
 
@@ -101,8 +100,5 @@ class SparseMatrixOneHotFeaturizer(Featurizer):
             Original string for an one hot encoded array.
 
         """
-        string = ""
         invers_trans = self.ohe.inverse_transform(one_hot_vectors)
-        for one_hot in invers_trans:
-            string += one_hot[0]
-        return string
+        return "".join(one_hot[0] for one_hot in invers_trans)

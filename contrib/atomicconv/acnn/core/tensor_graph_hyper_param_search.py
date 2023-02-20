@@ -82,16 +82,15 @@ epochs = [10]
 def params():
   for values in itertools.product(radial1, radial2, radial3, layer_sizes,
                                   learning_rates, epochs):
-    d = {
+    yield {
         "frag1_num_atoms": 140,
         "frag2_num_atoms": 821,
         "complex_num_atoms": 908,
         "radial": [values[0], values[1], values[2]],
         "layer_sizes": values[3],
         "learning_rate": values[4],
-        "epochs": values[5]
+        "epochs": values[5],
     }
-    yield d
 
 
 metric = [

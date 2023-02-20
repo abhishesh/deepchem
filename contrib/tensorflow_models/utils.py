@@ -69,7 +69,7 @@ def Mask(t, mask):
     return t
   if not t.get_shape()[:-1].is_compatible_with(mask.get_shape()):
     raise ValueError(
-        'Shapes do not match: %s vs. %s' % (t.get_shape(), mask.get_shape()))
+        f'Shapes do not match: {t.get_shape()} vs. {mask.get_shape()}')
   return tf.multiply(t, tf.expand_dims(mask, -1))
 
 
@@ -232,4 +232,4 @@ def StringToOp(string):
   try:
     return op_map[string]
   except KeyError:
-    raise NotImplementedError('Unrecognized op: %s' % string)
+    raise NotImplementedError(f'Unrecognized op: {string}')

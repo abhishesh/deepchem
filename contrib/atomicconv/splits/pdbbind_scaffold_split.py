@@ -11,15 +11,14 @@ train_dir = os.path.join(base_dir, "train")
 test_dir = os.path.join(base_dir, "test")
 pdbbind_dir = os.path.join(base_dir, "v2015")
 
-print("Loading ids from %s" % data_dir)
+print(f"Loading ids from {data_dir}")
 d = dc.data.DiskDataset(data_dir)
 ids = d.ids
 
 
 def compute_ligand_mol(pdb_subdir, pdb_code):
-  ligand_file = os.path.join(pdb_subdir, "%s_ligand.pdb" % pdb_code)
-  mol = Chem.MolFromPDBFile(str(ligand_file))
-  return mol
+  ligand_file = os.path.join(pdb_subdir, f"{pdb_code}_ligand.pdb")
+  return Chem.MolFromPDBFile(str(ligand_file))
 
 
 def create_scaffold_indices(pdbbind_dir, base_dir):
@@ -28,10 +27,10 @@ def create_scaffold_indices(pdbbind_dir, base_dir):
   frac_valid = 0.0
 
   scaffolds = {}
-  y = np.array([0 for val in ids])
+  y = np.array([0 for _ in ids])
   w = np.ones_like(y)
   for ind, pdb_code in enumerate(ids):
-    print("Processing %s" % str(pdb_code))
+    print(f"Processing {str(pdb_code)}")
     pdb_subdir = os.path.join(pdbbind_dir, pdb_code)
     mol = compute_ligand_mol(pdb_subdir, pdb_code)
     if mol is not None:

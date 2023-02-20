@@ -296,8 +296,7 @@ def compute_neighbor_cells(cells, ndim, n_cells):
   # Tile cells to form arrays of size (n_cells*n_cells, ndim)
   # Two tilings (a, b, c, a, b, c, ...) vs. (a, a, a, b, b, b, etc.)
   # Tile (a, a, a, b, b, b, etc.)
-  tiled_centers = tf.reshape(
-      tf.tile(cells, (1, n_cells)), (n_cells * n_cells, ndim))
+  tiled_centers = tf.reshape(tf.tile(cells, (1, n_cells)), (n_cells**2, ndim))
   # Tile (a, b, c, a, b, c, ...)
   tiled_cells = tf.tile(cells, (n_cells, 1))
 
@@ -312,12 +311,7 @@ def compute_neighbor_cells(cells, ndim, n_cells):
   ]
   coords_norm = [tf.reduce_sum(rel**2, axis=1) for rel in coords_rel]
 
-  # Lists of length n_cells
-  # Get indices of k atoms closest to each cell point
-  # n_cells tensors of shape (26,)
-  closest_inds = tf.stack([tf.nn.top_k(norm, k=k)[1] for norm in coords_norm])
-
-  return closest_inds
+  return tf.stack([tf.nn.top_k(norm, k=k)[1] for norm in coords_norm])
 
 
 def cutoff(d, x):
@@ -566,7 +560,7 @@ class VinaModel(Model):
     """Fit to actual data."""
     return
 
-  def mutate_conformer(protein, ligand):
+  def mutate_conformer(self, ligand):
     """Performs a mutation on the ligand position."""
     return
 
@@ -575,7 +569,7 @@ class VinaModel(Model):
     best_conf = None
     best_score = np.inf
     conf = self.sample_random_conformation()
-    for i in range(max_steps):
+    for _ in range(max_steps):
       mut_conf = self.mutate_conformer(conf)
       loc_conf = self.gradient_minimize(mut_conf)
       if best_conf is None:

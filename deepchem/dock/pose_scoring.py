@@ -59,8 +59,7 @@ def vina_nonlinearity(c: np.ndarray, w: float, Nrot: int) -> np.ndarray:
     np.ndarray
         A `(N, M)` array with activations under a nonlinearity.
     """
-    out_tensor = c / (1 + w * Nrot)
-    return out_tensor
+    return c / (1 + w * Nrot)
 
 
 def vina_repulsion(d: np.ndarray) -> np.ndarray:
@@ -100,9 +99,9 @@ def vina_hydrophobic(d: np.ndarray) -> np.ndarray:
         a continuous differentiable function tuned to compute binding affinities."
         Journal of computer-aided molecular design 10.5 (1996): 427-440.
     """
-    out_tensor = np.where(d < 0.5, np.ones_like(d),
-                          np.where(d < 1.5, 1.5 - d, np.zeros_like(d)))
-    return out_tensor
+    return np.where(
+        d < 0.5, np.ones_like(d), np.where(d < 1.5, 1.5 - d, np.zeros_like(d))
+    )
 
 
 def vina_hbond(d: np.ndarray) -> np.ndarray:
@@ -126,10 +125,11 @@ def vina_hbond(d: np.ndarray) -> np.ndarray:
         a continuous differentiable function tuned to compute binding affinities."
         Journal of computer-aided molecular design 10.5 (1996): 427-440.
     """
-    out_tensor = np.where(
-        d < -0.7, np.ones_like(d),
-        np.where(d < 0, (1.0 / 0.7) * (0 - d), np.zeros_like(d)))
-    return out_tensor
+    return np.where(
+        d < -0.7,
+        np.ones_like(d),
+        np.where(d < 0, (1.0 / 0.7) * (0 - d), np.zeros_like(d)),
+    )
 
 
 def vina_gaussian_first(d: np.ndarray) -> np.ndarray:
@@ -153,8 +153,7 @@ def vina_gaussian_first(d: np.ndarray) -> np.ndarray:
         a continuous differentiable function tuned to compute binding affinities."
         Journal of computer-aided molecular design 10.5 (1996): 427-440.
     """
-    out_tensor = np.exp(-(d / 0.5)**2)
-    return out_tensor
+    return np.exp(-(d / 0.5)**2)
 
 
 def vina_gaussian_second(d: np.ndarray) -> np.ndarray:
@@ -178,8 +177,7 @@ def vina_gaussian_second(d: np.ndarray) -> np.ndarray:
         a continuous differentiable function tuned to compute binding affinities."
         Journal of computer-aided molecular design 10.5 (1996): 427-440.
     """
-    out_tensor = np.exp(-((d - 3) / 2)**2)
-    return out_tensor
+    return np.exp(-((d - 3) / 2)**2)
 
 
 def weighted_linear_sum(w: np.ndarray, x: np.ndarray) -> np.ndarray:

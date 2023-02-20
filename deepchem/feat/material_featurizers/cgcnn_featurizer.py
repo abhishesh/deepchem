@@ -114,8 +114,7 @@ class CGCNNFeaturizer(MaterialStructureFeaturizer):
 
         node_features = self._get_node_features(datapoint)
         edge_index, edge_features = self._get_edge_features_and_index(datapoint)
-        graph = GraphData(node_features, edge_index, edge_features)
-        return graph
+        return GraphData(node_features, edge_index, edge_features)
 
     def _get_node_features(self, struct: PymatgenStructure) -> np.ndarray:
         """
@@ -197,8 +196,4 @@ class CGCNNFeaturizer(MaterialStructureFeaturizer):
 
         filt = np.arange(0, self.radius + self.step, self.step)
 
-        # Increase dimension of distance tensor and apply filter
-        expanded_distances = np.exp(-(distances[..., np.newaxis] - filt)**2 /
-                                    self.step**2)
-
-        return expanded_distances
+        return np.exp(-((distances[..., np.newaxis] - filt) ** 2) / self.step**2)
